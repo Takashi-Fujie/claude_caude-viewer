@@ -1,0 +1,28 @@
+{
+  "name": "claude-code-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "~/.claude 配下のログを可視化するローカル Web アプリ",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:unit": "vitest run",
+    "test:watch": "vitest",
+    "spec:check": "tsx scripts/spec-check.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test:unit"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.18.0",
+    "eslint": "^9.39.0",
+    "globals": "^15.15.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.0"
+  }
+}

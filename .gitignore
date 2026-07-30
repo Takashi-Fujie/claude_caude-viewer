@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+
+# インデックスキャッシュ（ローカルログ由来のためコミット禁止）
+.cache/
+
+# 検証レポート出力（実ログ由来）
+reports/
+tmp/
+*.local.json
+
+# テスト成果物
+coverage/
+playwright-report/
+test-results/
+
+.DS_Store
+*.log

@@ -1,0 +1,81 @@
+# claude-code-viewer
+
+`~/.claude/` 配下のログ（セッション JSONL・エージェント定義・スキル・プラグイン・設定）を可視化するローカル Web アプリ。
+
+## このリポジトリの制約（最優先）
+
+**リモートは public リポジトリ（`Takashi-Fujie/claude_caude-viewer`）である。** 扱うデータは開発者個人の全作業ログなので、以下を絶対にコミット・投稿しない。
+
+- 実ログのプロジェクトパス、プロンプト本文、PR URL
+- `~/.claude/settings.json` の permissions 実値
+- 実ログファイルそのもの（`tests/fixtures/` は**匿名化した合成 JSONL のみ**）
+- `npm run report` の出力（`reports/` は `.gitignore` 済み）
+
+Issue・PR・Spec・README に貼るのは**数値の要約まで**。
+
+## 開発フロー
+
+### TiDD
+
+- **1 Issue = 1 ブランチ = 1 PR**
+- ブランチ: `feat/<issue番号>-<slug>` / `fix/<issue番号>-<slug>`
+- コミットは Conventional Commits、本文末尾に `Refs #<N>`。PR 本文に `Closes #<N>`
+- Issue には SPEC-ID と受け入れ基準の要約のみ書く。詳細仕様は `docs/spec/` を参照させる
+
+### SpecDD
+
+`docs/spec/SPEC-*.md` が**仕様の正本**。運用規約は `docs/spec/README.md`。
+
+サイクル: **Spec に受け入れ基準を追記（`- [ ]`）→ テストを書く（Red）→ 実装（Green）→ verify → spec:check → Spec を `- [x]` に更新 → commit**
+
+Spec とコードは**同じ PR** に含める（diff で仕様変更をレビューできる状態を保つ）。
+
+### TestDD
+
+- テスト名は **`SPEC-ID: 説明` 形式**（ID の直後にコロン）。これが `spec:check` の突き合わせキーになる
+  ```ts
+  it('SPEC-COST-003: 1h キャッシュ書き込みを input 単価 x2.0 で計算する', () => { ... })
+  ```
+- テストデータとして ID 文字列を書くときは予約領域 **`SPEC-SAMPLE-***` を使う。突き合わせから常に除外される。
+  実仕様の ID をテストデータに書くと孤児テストとして誤検出される（Issue #1 で実際に発生した）
+- Vitest: サーバ側ロジック（パーサ / コスト計算 / 増分更新 / API）
+- Playwright: 画面のレンダリングとライブ更新（Issue #10 で導入）
+- フィクスチャには**巨大行（50KB+）・壊れた JSON 行・未知モデル行・`<synthetic>` 行**を必ず含める
+
+### commit 前に必ず通す
+
+```bash
+npm run verify      # typecheck → lint → test:unit
+npm run spec:check  # Spec ↔ ソースの乖離検査
+```
+
+**両方通るまで commit しない。** `spec:check` でずれが出たら「Spec を直す」か「実装を直す」かをユーザーに確認する（勝手にどちらかへ寄せない）。
+
+`verify` は Issue の進行に合わせて段階的に構成を増やす（実体の無いコマンドを並べても検証にならないため）。現在の構成と追加予定は `docs/spec/SPEC-FLOW.md` の「段階導入の記録」を参照。
+
+## コマンド
+
+```bash
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run test:unit    # vitest run
+npm run spec:check   # Spec ↔ ソース乖離検査
+npm run verify       # 上記をまとめて（commit 前ゲート）
+```
+
+## 設計上の判断（変更時は要相談）
+
+- **JSONL は全読み込みしない。** 最大 69MB・1 行平均 50KB なので、byte offset 付きでストリーム走査し、インデックスには軽量メタのみ保持する。全文は表示時に offset で seek して該当行だけ読む
+- **全文検索に転置インデックスを作らない。** 131MB 規模ならストリーム grep で十分速く、更新コストもかからない
+- **増分更新は追記前提。** `fileSize > lastOffset` なら差分だけ解析。縮小・mtime 逆行を検知したら全再構築
+- **壊れた JSON 行はスキップして継続する。** 1 行の破損で全体を落とさない
+- **未知モデルのコストを 0 円扱いで黙らせない。** `unknownModel` フラグを立てて UI に警告を出す
+- **コストは「推定」と明示する。** 単価は `server/pricing.json` に切り出し、ユーザーが編集できるようにする
+- サーバは `127.0.0.1` のみに bind。認証は設けず、外部公開しない
+- チャートを書く前に `dataviz` skill を読み込む
+
+## 完了報告の規律
+
+コードを直しただけで「直った」と報告しない。`npm run report` の数値、レンダリング結果、実測値のいずれかを確認してから完了とする。
+
+ユーザーの指摘と実測が矛盾したら、黙って作り直さず実測値を提示して真の要件を確認する。
