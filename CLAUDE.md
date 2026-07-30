@@ -22,6 +22,37 @@ Issue・PR・Spec・README に貼るのは**数値の要約まで**。
 - コミットは Conventional Commits、本文末尾に `Refs #<N>`。PR 本文に `Closes #<N>`
 - Issue には SPEC-ID と受け入れ基準の要約のみ書く。詳細仕様は `docs/spec/` を参照させる
 
+### GitHub 操作は `gh` CLI で行う
+
+**GitHub 側の操作はすべて `gh` を使う。** Issue・PR・ラベル・リポジトリ設定・CI の確認まで含む。Web UI での手作業や生の API 呼び出しに頼らない（操作が再現可能で、ログに残るため）。
+
+```bash
+gh issue create --title "..." --body "..."        # Issue 作成
+gh issue view <N> --comments                      # Issue 確認
+gh issue close <N> --comment "..."                # 検証結果を添えてクローズ
+gh pr create --title "..." --body "..."           # PR 作成（本文に Closes #N）
+gh pr view <N> --comments
+gh run list --limit 3                             # CI 実行一覧
+gh run watch <run-id> --exit-status                # CI の完了待ちと成否判定
+```
+
+- 認証状態は `gh auth status` で確認する。トークンは `gh` が管理しているものを使い、環境変数やファイルに手で書かない
+- Issue / PR の本文は**ヒアドキュメントで渡す**（日本語・バッククォート・チェックボックスが壊れないようにする）
+- **`git` の push / fetch / commit は `git` で行う。** `gh` は GitHub 側の操作専用
+- Issue のクローズは「動作確認が終わってから」。verify と spec:check の結果を要約してコメントに残す
+
+#### remote 設定（この環境固有・実務メモ）
+
+SSH の port 22 が外に出られない環境のため、remote は **SSH over 443** を指している。
+
+```
+origin  ssh://git@ssh.github.com:443/Takashi-Fujie/claude_caude-viewer.git
+```
+
+`git@github.com:...` 形式に戻すと push が接続タイムアウトする。HTTPS + `gh auth git-credential` も試したが 401 で通らなかった（`gho_` トークンでは Git 操作の認証が通らず、curl の Basic 認証では 200 が返る、という食い違いがある）。`gh` 自体は HTTPS で問題なく動くため、**GitHub API は `gh`、Git 転送は SSH over 443** という住み分けになっている。
+
+ターミナルから直接操作する場合はこの制約を受けないので、各自の環境に合わせて構わない。
+
 ### SpecDD
 
 `docs/spec/SPEC-*.md` が**仕様の正本**。運用規約は `docs/spec/README.md`。
