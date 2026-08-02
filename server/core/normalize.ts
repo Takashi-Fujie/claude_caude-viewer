@@ -75,6 +75,7 @@ function normalizeUsage(raw: unknown): NormalizedUsage {
     webSearch: toCount(serverToolUse['web_search_requests']),
     webFetch: toCount(serverToolUse['web_fetch_requests']),
     serviceTier: asString(usage['service_tier']),
+    speed: asString(usage['speed']),
   };
 }
 
