@@ -1,6 +1,8 @@
 # SPEC-FLOW — 開発フロー基盤（詳細設計書）
 
-`scripts/spec-check.ts` の実装詳細と受け入れ基準。人間向けの基本仕様書は [docs/spec/SPEC-FLOW.md](../spec/SPEC-FLOW.md)。
+`scripts/spec-check.ts` の実装詳細と受け入れ基準。
+
+> **SPEC-FLOW に基本仕様書は無い。** 開発フローは AGENTS.md が基本仕様書相当（人間が合意する正本）、`issue-start` / `issue-cycle` スキルが実装に当たるため。このファイルは spec-check というツールの受け入れ基準台帳としてのみ存在する。
 
 ## 用語
 

@@ -20,7 +20,7 @@
 
 | 領域 | 内容 |
 |---|---|
-| `SPEC-FLOW` | 開発フロー基盤（spec:check 自体の仕様） |
+| `SPEC-FLOW` | spec:check 自体の仕様（**詳細設計書のみ**。開発フローの正本は AGENTS.md とスキルのため基本仕様書を持たない） |
 | `SPEC-CORE` | JSONL パーサ・インデクサ・キャッシュ・増分更新 |
 | `SPEC-COST` | 価格表とコスト計算 |
 | `SPEC-API` | HTTP API |
