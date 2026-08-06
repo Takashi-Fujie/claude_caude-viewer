@@ -233,3 +233,74 @@ function toResultText(toolResult: Record<string, unknown> | undefined): string |
   if (!toolResult) return undefined;
   return textFromContent(toolResult['content']);
 }
+
+/** メッセージ本文の 1 ブロック。viewer は生の content 構造ではなくこれだけを見る。 */
+export interface BodyBlock {
+  type: 'text' | 'thinking' | 'tool_use' | 'tool_result' | 'other';
+  text?: string | undefined;
+  id?: string | undefined;
+  name?: string | undefined;
+  input?: unknown;
+  toolUseId?: string | undefined;
+  isError?: boolean | undefined;
+}
+
+/** 表示用に正規化したメッセージ本文（SPEC-API-032）。 */
+export interface MessageBody {
+  role?: string | undefined;
+  blocks: BodyBlock[];
+}
+
+/**
+ * 生レコード 1 件を表示用の本文へ正規化する。message.content を持たない type
+ * （title / mode など）は空の blocks を返す。normalizeRecord 同様、形が想定と
+ * 違っても例外を投げず「取れたものだけ取る」。
+ */
+export function normalizeBody(raw: unknown): MessageBody {
+  const obj = asObject(raw);
+  if (!obj) return { blocks: [] };
+
+  const message = asObject(obj['message']);
+  const role = asString(message?.['role']);
+  const content = message?.['content'] ?? obj['content'];
+
+  const direct = asString(content);
+  if (direct !== undefined) {
+    return { role, blocks: [{ type: 'text', text: direct }] };
+  }
+
+  const blocks: BodyBlock[] = [];
+  for (const item of asArray(content)) {
+    const block = asObject(item);
+    if (!block) continue;
+
+    switch (block['type']) {
+      case 'text':
+        blocks.push({ type: 'text', text: asString(block['text']) ?? '' });
+        break;
+      case 'thinking':
+        blocks.push({ type: 'thinking', text: asString(block['thinking']) ?? '' });
+        break;
+      case 'tool_use':
+        blocks.push({
+          type: 'tool_use',
+          id: asString(block['id']),
+          name: asString(block['name']),
+          input: block['input'],
+        });
+        break;
+      case 'tool_result':
+        blocks.push({
+          type: 'tool_result',
+          toolUseId: asString(block['tool_use_id']),
+          text: textFromContent(block['content']),
+          isError: block['is_error'] === true,
+        });
+        break;
+      default:
+        blocks.push({ type: 'other', text: textFromContent([block]) });
+    }
+  }
+
+  return { role, blocks };
+}
