@@ -13,7 +13,8 @@
     "test:unit": "vitest run",
     "test:watch": "vitest",
     "spec:check": "tsx scripts/spec-check.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test:unit"
+    "report": "tsx scripts/report.ts",
+    "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run report"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
