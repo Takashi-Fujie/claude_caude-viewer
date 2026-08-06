@@ -56,6 +56,7 @@
 - [x] `SPEC-CORE-023` 未知の type も unknown 分類で保持し、レコードを捨てない
 - [x] `SPEC-CORE-024` Agent tool_use の input.subagent_type をサブエージェント起動として抽出する
 - [x] `SPEC-CORE-025` Skill tool_use の input.skill と assistant の attributionSkill を skill 利用として抽出する
+- [x] `SPEC-CORE-026` usage の speed / service_tier を保持する（fast mode は単価が異なるため SPEC-COST が参照する）
 
 ### セッション要約
 

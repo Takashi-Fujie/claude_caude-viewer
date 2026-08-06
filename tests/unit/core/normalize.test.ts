@@ -100,6 +100,19 @@ describe('assistant', () => {
     expect(record.usage?.webFetch).toBe(2);
   });
 
+  it('SPEC-CORE-026: usage の speed / service_tier を保持する', () => {
+    const record = normalize(
+      assistantLine({
+        usage: { input_tokens: 1, output_tokens: 1, speed: 'fast', service_tier: 'priority' },
+      }),
+    );
+
+    expect(record.usage?.speed).toBe('fast');
+    expect(record.usage?.serviceTier).toBe('priority');
+    // 欠けている場合は undefined のまま（既定値で fast を隠さない）
+    expect(normalize(assistantLine({ usage: { input_tokens: 1 } })).usage?.speed).toBeUndefined();
+  });
+
   it('SPEC-CORE-014: model が <synthetic> の行は synthetic フラグを立てる', () => {
     expect(normalize(assistantLine({ model: '<synthetic>' })).synthetic).toBe(true);
     expect(normalize(assistantLine({ model: 'claude-sonnet-5' })).synthetic).toBe(false);

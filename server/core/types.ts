@@ -6,8 +6,13 @@
  * キャッシュサイズには影響しない。
  */
 
-/** キャッシュ形式のバージョン。構造を変えたら必ず上げる（古いキャッシュは破棄される）。 */
-export const INDEX_SCHEMA_VERSION = 1;
+/**
+ * キャッシュ形式のバージョン。構造を変えたら必ず上げる（古いキャッシュは破棄される）。
+ *
+ * 2: usage に speed / service_tier を追加（SPEC-CORE-026）。上げないと古いキャッシュに
+ *    speed が無いまま残り、fast mode のコストを静かに過小計上する。
+ */
+export const INDEX_SCHEMA_VERSION = 2;
 
 /** 走査で得られる生の 1 行。offset / length はバイト単位で、改行は length に含めない。 */
 export interface RawLine {
@@ -46,6 +51,8 @@ export interface NormalizedUsage {
   webSearch: number;
   webFetch: number;
   serviceTier?: string | undefined;
+  /** `fast` は単価が異なる（SPEC-COST-032）。既定値で埋めると undercount するので undefined のまま残す。 */
+  speed?: string | undefined;
 }
 
 export interface ToolUseRef {
