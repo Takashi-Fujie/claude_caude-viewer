@@ -4,7 +4,7 @@
 import { Router } from 'express';
 import { dailyOverview, filterByRange, tokenTotals, tokensByModel } from '../aggregate.js';
 import { estimateRecordsCost } from '../cost.js';
-import { parseRange, wrap } from '../http.js';
+import { parseRange, parseTzOffset, wrap } from '../http.js';
 import type { ApiContext } from '../http.js';
 import type { ProjectEntry } from '../store.js';
 import type { PriceTable } from '../cost.js';
@@ -70,11 +70,12 @@ export function overviewRoutes(ctx: ApiContext): Router {
     '/api/overview',
     wrap(async (req, res) => {
       const { from, to } = parseRange(req.query);
+      const tzOffset = parseTzOffset(req.query);
       const [snapshot, table] = await Promise.all([ctx.load(), ctx.loadTable()]);
 
       const all = snapshot.projects.flatMap((p) => p.sessions.flatMap((s) => s.index.records));
-      const records = filterByRange(all, from, to);
-      const inRange = (rs: IndexRecord[]): IndexRecord[] => filterByRange(rs, from, to);
+      const records = filterByRange(all, from, to, tzOffset);
+      const inRange = (rs: IndexRecord[]): IndexRecord[] => filterByRange(rs, from, to, tzOffset);
 
       let skippedLines = 0;
       for (const project of snapshot.projects) {
@@ -93,7 +94,7 @@ export function overviewRoutes(ctx: ApiContext): Router {
         },
         cost: estimateRecordsCost(records, table),
         byModel: tokensByModel(records),
-        daily: dailyOverview(records, table),
+        daily: dailyOverview(records, table, tzOffset),
         projects: snapshot.projects.map((p) => projectListItem(p, table, inRange)),
       });
     }),

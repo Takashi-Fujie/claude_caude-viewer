@@ -48,6 +48,19 @@ export interface DateRange {
   to: string | undefined;
 }
 
+/**
+ * tzOffset（分・UTC からの東向き。JST = 540）を検証して取り出す（SPEC-DASH-011)。
+ * 未指定は 0（UTC）。整数でない・絶対値 840 超は 400。
+ */
+export function parseTzOffset(query: Record<string, unknown>): number {
+  const raw = queryString(query['tzOffset']);
+  if (raw === undefined) return 0;
+  if (!/^-?\d+$/.test(raw) || Math.abs(Number.parseInt(raw, 10)) > 840) {
+    throw new HttpError(400, `tzOffset は絶対値 840 以下の整数（分）で指定してください: ${raw}`);
+  }
+  return Number.parseInt(raw, 10);
+}
+
 /** from / to（YYYY-MM-DD）を検証して取り出す。不正な形式は 400。 */
 export function parseRange(query: Record<string, unknown>): DateRange {
   const range: DateRange = { from: undefined, to: undefined };

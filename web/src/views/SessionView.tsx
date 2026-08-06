@@ -97,7 +97,7 @@ export function SessionView({ projectId, sessionId }: SessionViewProps) {
   return (
     <>
       <div className="crumbs">
-        <a href={routeHash({ view: 'projects' })}>← Overview</a>
+        <a href={routeHash({ view: 'overview' })}>← Overview</a>
         <span className="sep">/</span>
         <a href={routeHash({ view: 'sessions', projectId })} className="mono">
           {detail.summary.cwd ?? projectId}

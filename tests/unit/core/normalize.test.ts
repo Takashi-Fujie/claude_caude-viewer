@@ -275,3 +275,64 @@ describe('その他のレコード型', () => {
     expect(record.type).toBe('');
   });
 });
+
+describe('SPEC-DASH: ダッシュボード向け拡張', () => {
+  it('SPEC-DASH-001: tool_result の is_error: true を持つ user レコードは isToolError が true になり、無いものは undefined のままになる', () => {
+    const failed = normalize({
+      type: 'user',
+      uuid: 'u-e001',
+      message: {
+        role: 'user',
+        content: [
+          { type: 'tool_result', tool_use_id: 'toolu_sample_0001', content: 'Error: exit 1', is_error: true },
+        ],
+      },
+    });
+    expect(failed.isToolResult).toBe(true);
+    expect(failed.toolResultFor).toBe('toolu_sample_0001');
+    expect(failed.isToolError).toBe(true);
+
+    const ok = normalize({
+      type: 'user',
+      uuid: 'u-e002',
+      message: {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: 'toolu_sample_0002', content: 'done' }],
+      },
+    });
+    expect(ok.isToolError).toBeUndefined();
+
+    const plain = normalize({
+      type: 'user',
+      uuid: 'u-e003',
+      message: { role: 'user', content: 'ただのユーザー入力' },
+    });
+    expect(plain.isToolError).toBeUndefined();
+  });
+
+  it('SPEC-DASH-002: hook_ で始まる attachment から hookName / hookEvent を保持する', () => {
+    const hook = normalize({
+      type: 'attachment',
+      uuid: 'at-h001',
+      timestamp: '2026-01-01T00:00:00.000Z',
+      attachment: {
+        type: 'hook_success',
+        hookName: 'PreToolUse:Bash',
+        hookEvent: 'PreToolUse',
+        stdout: '（実値は画面のみに表示）',
+      },
+    });
+    expect(hook.attachmentType).toBe('hook_success');
+    expect(hook.hookName).toBe('PreToolUse:Bash');
+    expect(hook.hookEvent).toBe('PreToolUse');
+
+    // hook 以外の attachment には生やさない
+    const other = normalize({
+      type: 'attachment',
+      uuid: 'at-h002',
+      attachment: { type: 'task_reminder', hookName: '紛れ込み' },
+    });
+    expect(other.hookName).toBeUndefined();
+    expect(other.hookEvent).toBeUndefined();
+  });
+});

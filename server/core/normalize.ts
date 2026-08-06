@@ -164,6 +164,7 @@ export function normalizeRecord(raw: unknown, location: RecordLocation): IndexRe
         kind: 'user',
         isToolResult: toolResult !== undefined,
         toolResultFor: toolResult ? asString(toolResult['tool_use_id']) : undefined,
+        isToolError: toolResult?.['is_error'] === true ? true : undefined,
         preview: truncatePreview(
           toResultText(toolResult) ?? textFromContent(content),
         ),
@@ -180,13 +181,19 @@ export function normalizeRecord(raw: unknown, location: RecordLocation): IndexRe
         preview: truncatePreview(textFromContent(obj['content'])),
       };
 
-    case 'attachment':
+    case 'attachment': {
+      const attachment = asObject(obj['attachment']);
+      const attachmentType = asString(attachment?.['type']);
+      const isHook = attachmentType?.startsWith('hook_') === true;
       return {
         ...common,
         type,
         kind: 'attachment',
-        attachmentType: asString(asObject(obj['attachment'])?.['type']),
+        attachmentType,
+        hookName: isHook ? asString(attachment?.['hookName']) : undefined,
+        hookEvent: isHook ? asString(attachment?.['hookEvent']) : undefined,
       };
+    }
 
     case 'pr-link':
       return {
