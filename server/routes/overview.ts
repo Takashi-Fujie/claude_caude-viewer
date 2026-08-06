@@ -12,10 +12,29 @@ import type { IndexRecord } from '../core/types.js';
 
 export interface ProjectListItem {
   id: string;
+  /**
+   * セッションの cwd 由来の実パス（SPEC-CHAT-004）。ディレクトリ名は `/` が `-` に
+   * 変換された不可逆形式なので復号せず、ログの cwd を正とする。cwd が無ければ null。
+   */
+  path: string | null;
   sessionCount: number;
   totalTokens: number;
   estimatedCost: number;
   lastTimestamp: string | null;
+}
+
+/** プロジェクトの表示用実パス。最終更新が新しいセッションの cwd を採用する。 */
+export function projectPath(project: ProjectEntry): string | null {
+  let path: string | null = null;
+  let latest = '';
+  for (const session of project.sessions) {
+    const { cwd, lastTimestamp } = session.index.summary;
+    if (cwd !== undefined && cwd !== '' && (path === null || (lastTimestamp ?? '') > latest)) {
+      path = cwd;
+      latest = lastTimestamp ?? '';
+    }
+  }
+  return path;
 }
 
 /** プロジェクト一覧の 1 行。/api/projects と Overview のプロジェクト一覧で共用する。 */
@@ -36,6 +55,7 @@ export function projectListItem(
 
   return {
     id: project.id,
+    path: projectPath(project),
     sessionCount: project.sessions.length,
     totalTokens: tokens.input + tokens.output + tokens.cacheRead + tokens.cacheCreation,
     estimatedCost: estimateRecordsCost(filtered, table).total,

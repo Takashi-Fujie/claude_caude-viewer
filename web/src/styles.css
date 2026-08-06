@@ -1,0 +1,451 @@
+/* 画面スタイル。docs/mockups/viewer-mock.html（モック合意）の CSS トークンを移植。
+   色はドットだけが持ち、文字は常に ink（text-never-wears-data-color）。 */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --wash: rgba(42, 120, 214, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --good-text: #0ca30c;
+    --wash: rgba(57, 135, 229, 0.14);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+}
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--page);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+  /* 設計基準: 1512px（MacBook Pro 14" 論理解像度）未満は縮めず横スクロール */
+  min-width: 1512px;
+}
+
+.pagehead {
+  padding: 18px 22px 0;
+}
+.pagehead h1 {
+  font-size: 17px;
+  margin: 0 0 2px;
+}
+.pagehead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dashwrap {
+  padding: 16px 22px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cols2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sectionlabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 6px 2px -6px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.card h2 {
+  font-size: 13px;
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+.card h2 .est {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  background: transparent;
+}
+.badge.warn {
+  color: var(--ink);
+  border-color: var(--warning);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 5px 10px 5px 0;
+  border-bottom: 1px solid var(--grid);
+}
+td {
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--grid);
+  vertical-align: top;
+}
+tr:last-child td {
+  border-bottom: none;
+}
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+code,
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11.5px;
+}
+tr.rowlink {
+  cursor: pointer;
+}
+tr.rowlink:hover td {
+  background: var(--wash);
+}
+
+.pmeta {
+  color: var(--muted);
+  font-size: 11px;
+  margin-left: 8px;
+}
+.note {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 8px;
+}
+.err {
+  color: var(--critical);
+  font-weight: 600;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  background: var(--wash);
+  border: 1px solid var(--s1);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 3px 6px 3px 12px;
+}
+.chip button {
+  all: unset;
+  cursor: pointer;
+  padding: 0 6px;
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.hbar {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr) 74px;
+  gap: 10px;
+  align-items: center;
+  padding: 3px 0;
+}
+.hbar .lb {
+  font-size: 12px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hbar .track {
+  height: 14px;
+  display: flex;
+  align-items: center;
+}
+.hbar .track i {
+  display: block;
+  height: 14px;
+  border-radius: 0 4px 4px 0;
+  background: var(--s1);
+  min-width: 2px;
+}
+.hbar .val {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============ セッション分析 ============ */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 14px 22px 0;
+}
+.crumbs a {
+  color: var(--s1);
+  text-decoration: none;
+  cursor: pointer;
+}
+.crumbs .sep {
+  color: var(--baseline);
+}
+.chathead {
+  margin-top: 10px;
+  padding: 10px 22px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.chathead .t {
+  font-weight: 700;
+  font-size: 15px;
+}
+.chathead .sub {
+  color: var(--muted);
+  font-size: 11px;
+  width: 100%;
+}
+.chatbody {
+  padding: 20px 22px 40px;
+}
+
+.msg {
+  margin: 0 0 14px;
+}
+.msg .who {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 3px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.msg .who b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.msg.user .bubble {
+  background: var(--wash);
+  border-color: transparent;
+}
+.bubble .text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bubble .text.preview {
+  color: var(--ink-2);
+}
+.msg .cost {
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+details.tool {
+  border: 1px solid var(--grid);
+  border-radius: 8px;
+  margin: 8px 0 2px;
+  background: var(--page);
+  overflow: hidden;
+}
+details.tool summary {
+  cursor: pointer;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  list-style: none;
+}
+details.tool summary::-webkit-details-marker {
+  display: none;
+}
+details.tool summary::before {
+  content: '▸';
+  color: var(--muted);
+  font-size: 10px;
+}
+details.tool[open] summary::before {
+  content: '▾';
+}
+details.tool summary .toolarg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+details.tool .body {
+  border-top: 1px solid var(--grid);
+  padding: 8px 10px;
+}
+details.tool pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  color: var(--ink-2);
+  max-height: 420px;
+  overflow: auto;
+}
+details.tool pre.result {
+  margin-top: 8px;
+  border-top: 1px dashed var(--grid);
+  padding-top: 8px;
+}
+.toolname {
+  font-family: ui-monospace, Menlo, monospace;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* 種別チップ */
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-2);
+  padding: 0 6px;
+  border: 1px solid var(--grid);
+  border-radius: 4px;
+  background: var(--surface);
+}
+.kind::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--kc, var(--muted));
+}
+.k-tool {
+  --kc: var(--s1);
+}
+.k-mcp {
+  --kc: var(--s2);
+}
+.k-agent {
+  --kc: var(--s3);
+}
+.k-skill {
+  --kc: var(--s4);
+}
+.k-model::before {
+  display: none;
+}
+.kindlegend {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--grid);
+}
+
+.divider {
+  margin: 18px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--baseline);
+}
+
+.sidechain {
+  margin: 0 0 14px;
+  border-left: 3px solid var(--s3);
+  padding-left: 12px;
+}
+.sidechain > details > summary {
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  color: var(--ink-2);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sidechain > details > summary::-webkit-details-marker {
+  display: none;
+}
+.sidechain .meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+.sidechain .inner {
+  padding-top: 8px;
+}

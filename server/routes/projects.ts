@@ -8,7 +8,7 @@ import { HttpError, parseRange, wrap } from '../http.js';
 import type { ApiContext } from '../http.js';
 import type { SessionEntry } from '../store.js';
 import type { PriceTable } from '../cost.js';
-import { projectListItem } from './overview.js';
+import { projectListItem, projectPath } from './overview.js';
 
 /** セッション一覧の 1 行。要約から画面が必要とする分だけを写像する。 */
 function sessionListItem(session: SessionEntry, table: PriceTable): Record<string, unknown> {
@@ -61,6 +61,7 @@ export function projectRoutes(ctx: ApiContext): Router {
 
       res.json({
         id: project.id,
+        path: projectPath(project),
         range: { from: from ?? null, to: to ?? null },
         daily: dailyByModel(records),
         sessions: project.sessions.map((s) => sessionListItem(s, table)),
