@@ -349,19 +349,24 @@ describe('GET /api/stats/*', () => {
   });
 
   it('SPEC-API-051: stats/tools はツール別呼び出し回数を降順で返す', async () => {
+    // レスポンス形は Issue #7 で { tools, mcp, byProject } に拡張された（docs/design/DASH.md）
     const res = await request(app).get('/api/stats/tools');
     expect(res.status).toBe(200);
-    const names = res.body.map((t: { name: string }) => t.name);
+    const names = res.body.tools.map((t: { name: string }) => t.name);
     expect(names).toContain('Read');
-    const counts = res.body.map((t: { count: number }) => t.count);
+    const counts = res.body.tools.map((t: { count: number }) => t.count);
     expect([...counts].sort((a, b) => b - a)).toEqual(counts);
   });
 
   it('SPEC-API-052: stats/agents は subagent 別・skill 別の起動回数を返す', async () => {
     const res = await request(app).get('/api/stats/agents');
     expect(res.status).toBe(200);
-    expect(res.body.subagents).toContainEqual({ name: 'sample-reviewer', count: 1 });
-    expect(res.body.skills).toContainEqual({ name: 'sample-skill', count: 1 });
+    expect(res.body.subagents).toContainEqual(
+      expect.objectContaining({ name: 'sample-reviewer', count: 1 }),
+    );
+    expect(res.body.skills).toContainEqual(
+      expect.objectContaining({ name: 'sample-skill', count: 1 }),
+    );
   });
 });
 

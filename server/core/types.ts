@@ -11,8 +11,10 @@
  *
  * 2: usage に speed / service_tier を追加（SPEC-CORE-026）。上げないと古いキャッシュに
  *    speed が無いまま残り、fast mode のコストを静かに過小計上する。
+ * 3: user に isToolError、attachment に hookName / hookEvent を追加（SPEC-DASH-001/002）。
+ *    上げないと旧キャッシュのレコードが失敗 0 件・hook 履歴なしとして静かに欠損する。
  */
-export const INDEX_SCHEMA_VERSION = 2;
+export const INDEX_SCHEMA_VERSION = 3;
 
 /** 走査で得られる生の 1 行。offset / length はバイト単位で、改行は length に含めない。 */
 export interface RawLine {
@@ -98,6 +100,8 @@ export interface IndexRecord {
   // user
   isToolResult?: boolean | undefined;
   toolResultFor?: string | undefined;
+  /** tool_result の is_error === true（stderr の有無では判定しない。SPEC-DASH-001）。 */
+  isToolError?: boolean | undefined;
 
   // system
   subtype?: string | undefined;
@@ -105,6 +109,9 @@ export interface IndexRecord {
 
   // attachment
   attachmentType?: string | undefined;
+  /** attachment.type が hook_* のときの発火情報（SPEC-DASH-002）。 */
+  hookName?: string | undefined;
+  hookEvent?: string | undefined;
 
   // pr-link
   prNumber?: number | undefined;

@@ -7,8 +7,36 @@
 import type { IndexRecord, SessionSummary } from '../../../server/core/types';
 import type { BodyBlock, MessageBody } from '../../../server/core/normalize';
 import type { CostSummary } from '../../../server/cost';
+import type {
+  DailyModelRow,
+  DailyOverviewRow,
+  ModelTokenBreakdown,
+  TokenTotals,
+} from '../../../server/aggregate';
+import type {
+  HookEntry,
+  McpStat,
+  ProjectToolStat,
+  ToolStat,
+  UsageStat,
+} from '../../../server/routes/stats';
 
-export type { BodyBlock, IndexRecord, MessageBody, SessionSummary };
+export type {
+  BodyBlock,
+  CostSummary,
+  DailyModelRow,
+  DailyOverviewRow,
+  HookEntry,
+  IndexRecord,
+  McpStat,
+  MessageBody,
+  ModelTokenBreakdown,
+  ProjectToolStat,
+  SessionSummary,
+  TokenTotals,
+  ToolStat,
+  UsageStat,
+};
 
 /** メッセージ単位の推定コスト（サーバ側 estimateCost の要約。SPEC-CHAT-040）。 */
 export interface MessageCost {
@@ -61,4 +89,44 @@ export interface MessagesPage {
   limit: number;
   total: number;
   items: Array<{ index: number; meta: IndexRecord; body: MessageBody }>;
+}
+
+/** GET /api/overview のレスポンス（SPEC-DASH-012 で byModel を拡張）。 */
+export interface OverviewResponse {
+  range: { from: string | null; to: string | null };
+  totals: {
+    tokens: TokenTotals;
+    records: number;
+    sessions: number;
+    skippedLines: number;
+  };
+  cost: CostSummary;
+  byModel: Record<string, ModelTokenBreakdown>;
+  daily: DailyOverviewRow[];
+  projects: ProjectListItem[];
+}
+
+/** GET /api/stats/tools のレスポンス（SPEC-DASH-020〜023）。 */
+export interface ToolStatsResponse {
+  tools: ToolStat[];
+  mcp: McpStat[];
+  byProject: ProjectToolStat[];
+}
+
+/** GET /api/stats/agents のレスポンス（SPEC-DASH-024）。 */
+export interface AgentStatsResponse {
+  subagents: UsageStat[];
+  skills: UsageStat[];
+}
+
+/** GET /api/stats/hooks のレスポンス（SPEC-DASH-025）。 */
+export interface HookStatsResponse {
+  hooks: HookEntry[];
+  truncated: boolean;
+}
+
+/** GET /api/config のレスポンス（画面が使う分のみ）。 */
+export interface ConfigResponse {
+  agents: { name: string; description?: string }[];
+  skills: { name: string; description?: string }[];
 }

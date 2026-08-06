@@ -4,18 +4,30 @@
 import { Router } from 'express';
 import { dailyByModel, filterByRange } from '../aggregate.js';
 import { estimateRecordsCost } from '../cost.js';
-import { HttpError, parseRange, wrap } from '../http.js';
+import { HttpError, parseRange, parseTzOffset, wrap } from '../http.js';
 import type { ApiContext } from '../http.js';
 import type { SessionEntry } from '../store.js';
 import type { PriceTable } from '../cost.js';
+import type { IndexRecord } from '../core/types.js';
 import { projectListItem, projectPath } from './overview.js';
 
-/** セッション一覧の 1 行。要約から画面が必要とする分だけを写像する。 */
-function sessionListItem(session: SessionEntry, table: PriceTable): Record<string, unknown> {
+/**
+ * セッション一覧の 1 行。トークン・コストは範囲フィルタ後のレコードで計算する
+ * （日付クリック絞り込みで from = to を渡すと「その日の活動量」になる。SPEC-DASH-040）。
+ * recordCount / モデル一覧などのメタは要約のまま（セッション全体の性質を表す）。
+ */
+function sessionListItem(
+  session: SessionEntry,
+  table: PriceTable,
+  filter: (records: IndexRecord[]) => IndexRecord[],
+): Record<string, unknown> {
   const summary = session.index.summary;
+  const records = filter(session.index.records);
   let totalTokens = 0;
-  for (const totals of Object.values(summary.models)) {
-    totalTokens += totals.input + totals.output + totals.cacheRead + totals.cacheCreation;
+  for (const record of records) {
+    if (record.kind !== 'assistant' || record.usage === undefined) continue;
+    totalTokens +=
+      record.usage.input + record.usage.output + record.usage.cacheRead + record.usage.cacheCreation;
   }
 
   return {
@@ -26,7 +38,7 @@ function sessionListItem(session: SessionEntry, table: PriceTable): Record<strin
     recordCount: summary.recordCount,
     skippedLineCount: summary.skippedLineCount,
     totalTokens,
-    estimatedCost: estimateRecordsCost(session.index.records, table).total,
+    estimatedCost: estimateRecordsCost(records, table).total,
     models: Object.keys(summary.models).sort(),
   };
 }
@@ -46,6 +58,7 @@ export function projectRoutes(ctx: ApiContext): Router {
     '/api/projects/:id',
     wrap(async (req, res) => {
       const { from, to } = parseRange(req.query);
+      const tzOffset = parseTzOffset(req.query);
       const [snapshot, table] = await Promise.all([ctx.load(), ctx.loadTable()]);
 
       const project = snapshot.projects.find((p) => p.id === req.params['id']);
@@ -57,14 +70,17 @@ export function projectRoutes(ctx: ApiContext): Router {
         project.sessions.flatMap((s) => s.index.records),
         from,
         to,
+        tzOffset,
       );
 
       res.json({
         id: project.id,
         path: projectPath(project),
         range: { from: from ?? null, to: to ?? null },
-        daily: dailyByModel(records),
-        sessions: project.sessions.map((s) => sessionListItem(s, table)),
+        daily: dailyByModel(records, table, tzOffset),
+        sessions: project.sessions.map((s) =>
+          sessionListItem(s, table, (rs) => filterByRange(rs, from, to, tzOffset)),
+        ),
       });
     }),
   );

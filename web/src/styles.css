@@ -449,3 +449,244 @@ details.tool pre.result {
 .sidechain .inner {
   padding-top: 8px;
 }
+
+/* ============ アプリ骨格・左ナビ（SPEC-DASH-030・モック移植） ============ */
+.app {
+  display: grid;
+  grid-template-columns: 208px 1fr;
+  height: 100vh;
+}
+.nav {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav .brand {
+  font-weight: 700;
+  font-size: 14px;
+  padding: 4px 10px 12px;
+}
+.nav .brand small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 11px;
+}
+.nav a {
+  cursor: pointer;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--ink-2);
+  font-size: 13px;
+  display: block;
+  text-decoration: none;
+}
+.nav a:hover {
+  background: var(--wash);
+}
+.nav a.active {
+  background: var(--wash);
+  color: var(--ink);
+  font-weight: 600;
+}
+.nav .group {
+  margin: 10px 10px 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.nav .foot {
+  margin-top: auto;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+.appmain {
+  overflow: auto;
+}
+
+/* ============ ダッシュボード（SPEC-DASH-032〜・モック移植） ============ */
+.filterrow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.filterrow .presets {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.filterrow .presets button {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--ink-2);
+  border-right: 1px solid var(--border);
+}
+.filterrow .presets button:last-child {
+  border-right: none;
+}
+.filterrow .presets button.on {
+  background: var(--wash);
+  color: var(--ink);
+  font-weight: 600;
+}
+.filterrow select,
+.listctl select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+.listctl {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 2.4fr;
+  gap: 12px;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 16px;
+}
+.tile .lb {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.tile .lb .est {
+  color: var(--muted);
+}
+.tile .v {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 2px 0;
+}
+.tile.hero .v {
+  font-size: 40px;
+}
+.donuts {
+  display: flex;
+  gap: 28px;
+}
+.donut {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex: 1;
+}
+.dlegend {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dlegend .t {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 11px;
+  margin-bottom: 1px;
+}
+.dlegend .r {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.dlegend .r i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.dlegend .r .pct {
+  color: var(--muted);
+}
+.warnbanner {
+  border: 1px solid var(--warning);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12.5px;
+}
+.warnbanner .ic {
+  color: var(--warning);
+  font-weight: 700;
+}
+.legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+.legend i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: baseline;
+}
+.badge.unused {
+  border-color: var(--serious);
+}
+.chip.on {
+  display: inline-flex;
+}
+.charttip {
+  position: absolute;
+  top: 12px;
+  pointer-events: none;
+  z-index: 50;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  min-width: 170px;
+}
+.charttip .d {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.charttip .r {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.charttip .r i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 5px;
+}
+.charttip .r b {
+  color: var(--ink);
+}
+.card .scrolly {
+  max-height: 340px;
+  overflow-y: auto;
+}
