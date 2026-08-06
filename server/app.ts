@@ -5,6 +5,8 @@
  * アプリを組み立てる（実ログ ~/.claude に触れない）。listen はここでは行わない
  * （supertest がポート無しで直接叩けるように、bind は server/index.ts の責務）。
  */
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import type { Express, NextFunction, Request, Response } from 'express';
 import { loadPriceTable } from './cost.js';
@@ -26,7 +28,12 @@ export interface AppOptions {
   claudeDir: string;
   /** 価格表のパス。省略時は server/pricing.json。 */
   priceTablePath?: string | undefined;
+  /** フロントエンドのビルド成果物（本番は web/dist）。存在するときだけ静的配信する。 */
+  webDistDir?: string | undefined;
 }
+
+/** 既定のフロントエンド成果物の場所（`npm run build:web` の出力先）。 */
+export const DEFAULT_WEB_DIST_DIR = fileURLToPath(new URL('../web/dist', import.meta.url));
 
 export function createApp(options: AppOptions): Express {
   const ctx: ApiContext = {
@@ -36,6 +43,14 @@ export function createApp(options: AppOptions): Express {
   };
 
   const app = express();
+
+  // フロントエンド成果物の静的配信（SPEC-CHAT-060）。ハッシュルーティングなので
+  // SPA fallback は不要で、index.html と静的アセットを返すだけでよい。
+  const webDistDir = options.webDistDir ?? DEFAULT_WEB_DIST_DIR;
+  if (existsSync(webDistDir)) {
+    app.use(express.static(webDistDir));
+  }
+
   app.use(overviewRoutes(ctx));
   app.use(projectRoutes(ctx));
   app.use(sessionRoutes(ctx));
