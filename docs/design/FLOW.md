@@ -49,6 +49,6 @@
 
 | 追加時期 | verify の構成 |
 |---|---|
-| Issue #1（現在） | `typecheck` → `lint` → `test:unit` |
-| Issue #4 | 上記 + `report`（実ログに対する実測値照合） |
+| Issue #1 | `typecheck` → `lint` → `test:unit` |
+| Issue #4（現在） | 上記 + `report`（実ログに対する実測値照合。CI では実ログが無いため実行しない） |
 | Issue #10 | 上記 + `test:e2e`（Playwright） |
