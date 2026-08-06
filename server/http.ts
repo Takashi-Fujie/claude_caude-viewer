@@ -4,6 +4,7 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { DATE_RE } from './aggregate.js';
 import type { PriceTable } from './cost.js';
+import type { LiveHub } from './live.js';
 import type { Snapshot } from './store.js';
 
 /** 各ルートへ注入する依存。テストは logDir / cacheDir / claudeDir を差し替える。 */
@@ -11,6 +12,8 @@ export interface ApiContext {
   load(): Promise<Snapshot>;
   loadTable(): Promise<PriceTable>;
   claudeDir: string;
+  /** ライブ配信のハブ（SPEC-LIVE）。 */
+  hub: LiveHub;
 }
 
 /** ステータスコード付きのエラー。エラーミドルウェアが JSON へ変換する。 */

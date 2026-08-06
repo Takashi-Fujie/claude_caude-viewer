@@ -10,6 +10,8 @@ import { api } from '../api';
 import { createBodyStore } from '../lib/bodystore';
 import { buildExchanges } from '../lib/exchanges';
 import { formatUsd } from '../lib/format';
+import { applyAppend, openLive } from '../lib/live';
+import type { LiveStatus } from '../lib/live';
 import { buildRows, filterRows } from '../lib/thread';
 import { DividerLine } from '../components/DividerLine';
 import { KindLegend } from '../components/KindLegend';
@@ -35,12 +37,17 @@ export function SessionView({ projectId, sessionId }: SessionViewProps) {
   const [detail, setDetail] = useState<SessionDetail | undefined>();
   const [error, setError] = useState<string | undefined>();
   const [selected, setSelected] = useState<number | null>(null);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | undefined>();
+  /** reset イベント（全再構築）で詳細を取得し直すための再読込キー（SPEC-LIVE-023）。 */
+  const [reloadKey, setReloadKey] = useState(0);
   const storeRef = useRef<BodyStore | undefined>(undefined);
 
   useEffect(() => {
     let alive = true;
+    let live: { close: () => void } | undefined;
     setDetail(undefined);
     setSelected(null);
+    setLiveStatus(undefined);
     api.session(sessionId).then(
       (d) => {
         if (!alive) return;
@@ -51,6 +58,19 @@ export function SessionView({ projectId, sessionId }: SessionViewProps) {
             (await api.messages(sessionId, start, limit)).items.map((item) => item.body),
         });
         setDetail(d);
+        // ライブ購読（SPEC-LIVE-020〜023）。追記は末尾へ差分適用し、集計は全量を差し替える
+        live = openLive({
+          sessionId,
+          have: d.messages.length,
+          onAppend: (payload) => {
+            storeRef.current?.grow(payload.start + payload.messages.length);
+            setDetail((prev) => (prev ? applyAppend(prev, payload) : prev));
+          },
+          onReset: () => setReloadKey((k) => k + 1),
+          onStatus: (status) => {
+            if (alive) setLiveStatus(status);
+          },
+        });
       },
       (e: Error) => {
         if (alive) setError(e.message);
@@ -58,8 +78,9 @@ export function SessionView({ projectId, sessionId }: SessionViewProps) {
     );
     return () => {
       alive = false;
+      live?.close();
     };
-  }, [sessionId]);
+  }, [sessionId, reloadKey]);
 
   const rows = useMemo(() => (detail ? buildRows(detail.messages) : []), [detail]);
   const exchanges = useMemo(() => (detail ? buildExchanges(detail.messages) : []), [detail]);
@@ -111,6 +132,7 @@ export function SessionView({ projectId, sessionId }: SessionViewProps) {
         costTotal={detail.cost.total}
         unknownModels={detail.cost.unknownModels}
         subline={subline}
+        live={liveStatus}
       />
       <div className="dashwrap" style={{ paddingBottom: 0 }}>
         <div className="sectionlabel">このセッションの利用状況</div>

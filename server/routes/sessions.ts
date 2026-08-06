@@ -8,7 +8,8 @@
 import { Router } from 'express';
 import { normalizeBody } from '../core/normalize.js';
 import { readRecordAt } from '../core/scan.js';
-import { estimateCost, estimateRecordsCost } from '../cost.js';
+import { estimateRecordsCost } from '../cost.js';
+import { toMessageMetas } from '../messages.js';
 import { HttpError, queryInt, wrap } from '../http.js';
 import type { ApiContext } from '../http.js';
 import type { SessionEntry, Snapshot } from '../store.js';
@@ -37,20 +38,8 @@ export function sessionRoutes(ctx: ApiContext): Router {
         summary: session.index.summary,
         cost: estimateRecordsCost(session.index.records, table),
         // assistant メタにはメッセージ単位の推定コストを付ける（SPEC-CHAT-040）。
-        // 単価計算をクライアントへ複製しないため、ここで estimateCost の要約を写す。
-        messages: session.index.records.map((record, index) => {
-          if (record.kind !== 'assistant' || !record.usage) return { index, ...record };
-          const cost = estimateCost(
-            {
-              model: record.model,
-              timestamp: record.timestamp,
-              speed: record.usage.speed,
-              usage: record.usage,
-            },
-            table,
-          );
-          return { index, ...record, cost: { total: cost.total, unknownModel: cost.unknownModel } };
-        }),
+        // SSE の append と同形を保つため messages.ts に一本化している（SPEC-LIVE-011）。
+        messages: toMessageMetas(session.index.records, table),
       });
     }),
   );

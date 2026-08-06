@@ -27,4 +27,26 @@ describe('createBodyStore', () => {
     await store.ensure(24);
     expect(fetchPage).toHaveBeenLastCalledWith(20, 5);
   });
+
+  it('SPEC-LIVE-024: 総件数が増えたとき取得済みの完全ページは保持し、末尾の部分ページだけ再取得する', async () => {
+    const fetchPage = vi.fn(async (start: number, limit: number) =>
+      Array.from({ length: limit }, (_, i) => body(`msg-${start + i}`)),
+    );
+    const store = createBodyStore({ pageSize: 10, total: 25, fetchPage });
+
+    await store.ensure(3); // 完全ページ (0,10)
+    await store.ensure(24); // 部分ページ (20,5)
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+
+    store.grow(37);
+
+    // 部分だった末尾ページは新しい limit で取り直す
+    expect(await store.ensure(28)).toEqual(body('msg-28'));
+    expect(fetchPage).toHaveBeenLastCalledWith(20, 10);
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+
+    // 完全ページはキャッシュのまま（再取得しない）
+    expect(await store.ensure(3)).toEqual(body('msg-3'));
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+  });
 });
