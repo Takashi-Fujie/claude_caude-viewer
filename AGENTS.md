@@ -7,7 +7,7 @@
 複数のコーディングエージェント（Claude Code / Codex CLI 等）で併用するため、[AGENTS.md 標準](https://agents.md)と [Agent Skills 標準](https://agentskills.io)に合わせている。
 
 - **この `AGENTS.md` が正本。** `CLAUDE.md` はここへのシンボリックリンク（Claude Code は AGENTS.md を直接読まないため）
-- スキルの正本は `.claude/skills/<name>/SKILL.md`。`.codex/skills` はそこへのシンボリックリンク（Codex CLI 用）
+- スキルの正本はツール中立の **`skills/<name>/SKILL.md`**。`.claude/skills`（Claude Code 用）と `.codex/skills`（Codex CLI 用）はどちらもそこへのシンボリックリンク
 - 手順の詳細はスキル側に置き、このファイルには原則と制約だけを書く。**両方に同じ手順を書かない**（乖離の温床になる）
 
 | スキル | 用途 |
@@ -51,6 +51,7 @@ gh run watch <run-id> --exit-status                # CI の完了待ちと成否
 ```
 
 - 認証状態は `gh auth status` で確認する。トークンは `gh` が管理しているものを使い、環境変数やファイルに手で書かない
+- **エージェントが Issue / PR にコメントするときは冒頭に `🤖 **Claude (agent)**` の行を付ける。** `gh` はユーザー名義で書き込むため、マーカーが無いと本人の発言と区別できない
 - Issue / PR の本文は**ヒアドキュメントで渡す**（日本語・バッククォート・チェックボックスが壊れないようにする）
 - **`git` の push / fetch / commit は `git` で行う。** `gh` は GitHub 側の操作専用
 - Issue のクローズは「動作確認が終わってから」。verify と spec:check の結果を要約してコメントに残す
