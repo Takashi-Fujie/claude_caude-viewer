@@ -122,6 +122,11 @@ body {
   color: var(--ink);
   border-color: var(--warning);
 }
+/* ライブ状態（SPEC-LIVE-022） */
+.badge.live {
+  color: var(--ok, #2e9e5b);
+  border-color: currentColor;
+}
 
 table {
   border-collapse: collapse;

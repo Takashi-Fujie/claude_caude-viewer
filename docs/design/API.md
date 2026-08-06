@@ -18,6 +18,7 @@
 | `GET /api/stats/tools` | ツール別呼出・失敗数、MCP サーバ別内訳、プロジェクト別利用（SPEC-DASH-020〜023） | `from` `to` `tzOffset` `project` |
 | `GET /api/stats/agents` | subagent / skill 別の起動実績と最終使用日時 | `from` `to` `tzOffset` `project` |
 | `GET /api/stats/hooks` | hook 発火履歴（新しい順・SPEC-DASH-025） | `from` `to` `tzOffset` `project` `limit` |
+| `GET /api/live` | セッション差分の SSE 配信（詳細は [LIVE.md](LIVE.md)） | `session` `have` |
 | `GET /api/config` | `~/.claude/` の agents / skills / settings 一覧 | — |
 | `GET /api/pricing` | 価格表（コストが「推定」であることの明示付き） | — |
 

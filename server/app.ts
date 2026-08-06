@@ -12,8 +12,11 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import { loadPriceTable } from './cost.js';
 import { HttpError } from './http.js';
 import type { ApiContext } from './http.js';
+import { createLiveHub } from './live.js';
+import type { LiveHub } from './live.js';
 import { loadSnapshot } from './store.js';
 import { configRoutes } from './routes/config.js';
+import { liveRoutes } from './routes/live.js';
 import { overviewRoutes } from './routes/overview.js';
 import { projectRoutes } from './routes/projects.js';
 import { searchRoutes } from './routes/search.js';
@@ -30,16 +33,23 @@ export interface AppOptions {
   priceTablePath?: string | undefined;
   /** フロントエンドのビルド成果物（本番は web/dist）。存在するときだけ静的配信する。 */
   webDistDir?: string | undefined;
+  /**
+   * ライブ配信のハブ（SPEC-LIVE）。省略時は内部生成する。
+   * テストは自前で生成して渡し、終了時に close() で chokidar を確実に破棄する。
+   */
+  hub?: LiveHub | undefined;
 }
 
 /** 既定のフロントエンド成果物の場所（`npm run build:web` の出力先）。 */
 export const DEFAULT_WEB_DIST_DIR = fileURLToPath(new URL('../web/dist', import.meta.url));
 
 export function createApp(options: AppOptions): Express {
+  const loadTable = (): ReturnType<typeof loadPriceTable> => loadPriceTable(options.priceTablePath);
   const ctx: ApiContext = {
     load: () => loadSnapshot({ logDir: options.logDir, cacheDir: options.cacheDir }),
-    loadTable: () => loadPriceTable(options.priceTablePath),
+    loadTable,
     claudeDir: options.claudeDir,
+    hub: options.hub ?? createLiveHub({ logDir: options.logDir, cacheDir: options.cacheDir, loadTable }),
   };
 
   const app = express();
@@ -57,6 +67,7 @@ export function createApp(options: AppOptions): Express {
   app.use(searchRoutes(ctx));
   app.use(statsRoutes(ctx));
   app.use(configRoutes(ctx));
+  app.use(liveRoutes(ctx));
 
   // どのルートにも一致しなかったリクエスト
   app.use((req: Request, res: Response) => {

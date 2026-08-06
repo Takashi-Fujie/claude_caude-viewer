@@ -2,6 +2,7 @@
  * セッション分析画面のヘッダ（SPEC-CHAT-002/003）。
  */
 import { formatTokens, formatUsd } from '../lib/format';
+import type { LiveStatus } from '../lib/live';
 import type { SessionSummary } from '../lib/types';
 
 export interface SessionHeaderProps {
@@ -10,9 +11,11 @@ export interface SessionHeaderProps {
   costTotal: number;
   unknownModels: string[];
   subline?: string | undefined;
+  /** ライブ状態（SPEC-LIVE-022）。undefined なら表示しない。 */
+  live?: LiveStatus | undefined;
 }
 
-export function SessionHeader({ title, summary, costTotal, unknownModels, subline }: SessionHeaderProps) {
+export function SessionHeader({ title, summary, costTotal, unknownModels, subline, live }: SessionHeaderProps) {
   const models = Object.keys(summary.models);
   const totalTokens = Object.values(summary.models).reduce(
     (a, m) => a + m.input + m.output + m.cacheRead + m.cacheCreation,
@@ -29,6 +32,8 @@ export function SessionHeader({ title, summary, costTotal, unknownModels, sublin
       ))}
       <span className="badge">合計 {formatTokens(totalTokens)} tok</span>
       <span className="badge">{formatUsd(costTotal)} 推定</span>
+      {live === 'connected' && <span className="badge live">● ライブ</span>}
+      {live === 'disconnected' && <span className="badge warn">ライブ切断（再接続中）</span>}
       {summary.skippedLineCount > 0 && (
         <span className="badge warn">⚠ 破損 {summary.skippedLineCount} 行スキップ</span>
       )}
