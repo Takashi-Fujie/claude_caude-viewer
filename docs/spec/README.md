@@ -24,8 +24,8 @@
 | `SPEC-CORE` | JSONL パーサ・インデクサ・キャッシュ・増分更新 |
 | `SPEC-COST` | 価格表とコスト計算 |
 | `SPEC-API` | HTTP API |
-| `SPEC-CHAT` | セッション一覧・チャットビューア |
-| `SPEC-DASH` | ダッシュボード（Overview / Tools & MCP / Agents & Skills） |
+| `SPEC-CHAT` | セッション分析・チャットビューア |
+| `SPEC-DASH` | ダッシュボード（Overview / プロジェクト / Tools & Agents） |
 | `SPEC-LIVE` | ファイル監視とライブ更新 |
 | `SPEC-CONFIG` | agents / skills / plugins / settings の可視化 |
 
