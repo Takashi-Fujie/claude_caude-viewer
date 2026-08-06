@@ -7,7 +7,7 @@
 複数のコーディングエージェント（Claude Code / Codex CLI 等）で併用するため、[AGENTS.md 標準](https://agents.md)と [Agent Skills 標準](https://agentskills.io)に合わせている。
 
 - **この `AGENTS.md` が正本。** `CLAUDE.md` はここへのシンボリックリンク（Claude Code は AGENTS.md を直接読まないため）
-- スキルの正本はツール中立の **`skills/<name>/SKILL.md`**。`.claude/skills`（Claude Code 用）と `.codex/skills`（Codex CLI 用）はどちらもそこへのシンボリックリンク
+- スキルの正本は標準配置の **`.agents/skills/<name>/SKILL.md`**（Codex CLI はここを直接走査する）。`.claude/skills` はそこへのシンボリックリンク（Claude Code は `.agents/skills` を直接読まないため）
 - 手順の詳細はスキル側に置き、このファイルには原則と制約だけを書く。**両方に同じ手順を書かない**（乖離の温床になる）
 
 | スキル | 用途 |

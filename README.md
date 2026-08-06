@@ -35,7 +35,7 @@ npm run test:watch   # テスト watch
 複数のコーディングエージェントで併用できるよう [AGENTS.md 標準](https://agents.md)と [Agent Skills 標準](https://agentskills.io)に合わせている。
 
 - `AGENTS.md` が正本。`CLAUDE.md` はシンボリックリンク（Claude Code 用）
-- スキルの正本はツール中立の `skills/<name>/SKILL.md`。`.claude/skills` と `.codex/skills` はどちらもそこへのシンボリックリンク
+- スキルの正本は標準配置の `.agents/skills/<name>/SKILL.md`（Codex CLI は直接走査）。`.claude/skills` はそこへのシンボリックリンク（Claude Code 用）
 - スキル: `issue-create`（Issue 作成まで）/ `dev-cycle`（ブランチ作成〜PR〜クローズ）/ `project-review`（このリポジトリ固有のレビュー観点）
 
 ## 設計方針
