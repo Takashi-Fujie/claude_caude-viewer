@@ -14,4 +14,4 @@ Issue #5 着手時に、提供する機能を利用者の言葉で記入する�
 
 curl でエンドポイントを叩いた実際のレスポンスを確認する（Issue #5 着手時に具体化する）。
 
-エンドポイント表・受け入れ基準は [docs/design/SPEC-API.md](../design/SPEC-API.md)。
+エンドポイント表・受け入れ基準は [docs/design/API.md](../design/API.md)。

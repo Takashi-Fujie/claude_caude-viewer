@@ -1,6 +1,6 @@
 # SPEC-CORE — JSONL パーサとインデクサ（詳細設計書）
 
-担当 Issue: #2。人間向けの基本仕様書は [docs/spec/SPEC-CORE.md](../spec/SPEC-CORE.md)。
+担当 Issue: #2。人間向けの基本仕様書は [docs/spec/CORE.md](../spec/CORE.md)。
 
 ## 設計上の制約
 

@@ -1,6 +1,6 @@
 # SPEC-COST — 価格表とコスト計算（詳細設計書）
 
-担当 Issue: #3。人間向けの基本仕様書は [docs/spec/SPEC-COST.md](../spec/SPEC-COST.md)。
+担当 Issue: #3。人間向けの基本仕様書は [docs/spec/COST.md](../spec/COST.md)。
 
 ## ゴール
 

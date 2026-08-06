@@ -20,4 +20,4 @@
 
 画面のレンダリング結果で、自身の `~/.claude/` の内容と一致することを確認する。詳細は Issue #9 着手時に具体化する。
 
-実装方針・受け入れ基準は [docs/design/SPEC-CONFIG.md](../design/SPEC-CONFIG.md)。
+実装方針・受け入れ基準は [docs/design/CONFIG.md](../design/CONFIG.md)。

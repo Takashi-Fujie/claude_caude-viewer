@@ -17,4 +17,4 @@
 
 `npm run report`（Issue #4 で導入）で実ログに対する件数・処理時間・スキップ行数の実測値を確認する。参考値（Issue #2 時点）: 15 ファイル / 131.9MB を初回 434ms・再構築 84ms、インデックス 11,003 件・破損行 0。
 
-実装詳細・データモデル・受け入れ基準は [docs/design/SPEC-CORE.md](../design/SPEC-CORE.md)。
+実装詳細・データモデル・受け入れ基準は [docs/design/CORE.md](../design/CORE.md)。

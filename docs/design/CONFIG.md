@@ -1,6 +1,6 @@
 # SPEC-CONFIG — 設定・定義の可視化（詳細設計書）
 
-担当 Issue: #9。人間向けの基本仕様書は [docs/spec/SPEC-CONFIG.md](../spec/SPEC-CONFIG.md)。
+担当 Issue: #9。人間向けの基本仕様書は [docs/spec/CONFIG.md](../spec/CONFIG.md)。
 
 ## 対象
 

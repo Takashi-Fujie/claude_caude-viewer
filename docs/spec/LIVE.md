@@ -14,4 +14,4 @@
 
 実際に進行中のセッションを開き、リロードせずに新しいメッセージが表示されることを確認する。詳細は Issue #8 着手時に具体化する。
 
-実装方針・受け入れ基準は [docs/design/SPEC-LIVE.md](../design/SPEC-LIVE.md)。
+実装方針・受け入れ基準は [docs/design/LIVE.md](../design/LIVE.md)。

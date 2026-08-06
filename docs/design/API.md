@@ -1,6 +1,6 @@
 # SPEC-API — HTTP API（詳細設計書）
 
-担当 Issue: #5。人間向けの基本仕様書は [docs/spec/SPEC-API.md](../spec/SPEC-API.md)。
+担当 Issue: #5。人間向けの基本仕様書は [docs/spec/API.md](../spec/API.md)。
 
 ## エンドポイント
 

@@ -1,6 +1,6 @@
 # SPEC-DASH — ダッシュボード（詳細設計書）
 
-担当 Issue: #7。人間向けの基本仕様書は [docs/spec/SPEC-DASH.md](../spec/SPEC-DASH.md)。
+担当 Issue: #7。人間向けの基本仕様書は [docs/spec/DASH.md](../spec/DASH.md)。
 
 ## 実装方針
 

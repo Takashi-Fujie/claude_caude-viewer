@@ -18,4 +18,4 @@
 
 画面のレンダリング結果と Playwright E2E（Issue #10 導入後）で確認する。詳細は Issue #7 着手時に具体化する。
 
-実装方針・受け入れ基準は [docs/design/SPEC-DASH.md](../design/SPEC-DASH.md)。
+実装方針・受け入れ基準は [docs/design/DASH.md](../design/DASH.md)。

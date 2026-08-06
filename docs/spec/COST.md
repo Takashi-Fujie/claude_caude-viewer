@@ -22,4 +22,4 @@
 
 `npm run report`（Issue #4 で導入）の集計値を確認する。参考値（Issue #3 時点）: 15 ファイル / 131.9MB に対する推定合計 $1,071.00、未知モデルは `<synthetic>` のみ（12 件・警告表示）。
 
-単価・データモデル・受け入れ基準は [docs/design/SPEC-COST.md](../design/SPEC-COST.md)。
+単価・データモデル・受け入れ基準は [docs/design/COST.md](../design/COST.md)。

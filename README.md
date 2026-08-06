@@ -36,7 +36,7 @@ npm run test:watch   # テスト watch
 
 - `AGENTS.md` が正本。`CLAUDE.md` はシンボリックリンク（Claude Code 用）
 - スキルの正本は `.claude/skills/<name>/SKILL.md`。`.codex/skills` はそこへのシンボリックリンク（Codex CLI 用）
-- スキル: `issue-start`（Issue 作成まで）/ `issue-cycle`（ブランチ作成〜PR〜クローズ）/ `project-review`（このリポジトリ固有のレビュー観点）
+- スキル: `issue-create`（Issue 作成まで）/ `dev-cycle`（ブランチ作成〜PR〜クローズ）/ `project-review`（このリポジトリ固有のレビュー観点）
 
 ## 設計方針
 

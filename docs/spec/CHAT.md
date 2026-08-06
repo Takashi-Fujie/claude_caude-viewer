@@ -19,4 +19,4 @@
 
 画面のレンダリング結果と Playwright E2E（Issue #10 導入後）で確認する。詳細は Issue #6 着手時に具体化する。
 
-実装方針・受け入れ基準は [docs/design/SPEC-CHAT.md](../design/SPEC-CHAT.md)。
+実装方針・受け入れ基準は [docs/design/CHAT.md](../design/CHAT.md)。

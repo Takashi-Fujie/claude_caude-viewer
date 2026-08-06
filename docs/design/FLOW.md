@@ -2,23 +2,23 @@
 
 `scripts/spec-check.ts` の実装詳細と受け入れ基準。
 
-> **SPEC-FLOW に基本仕様書は無い。** 開発フローは AGENTS.md が基本仕様書相当（人間が合意する正本）、`issue-start` / `issue-cycle` スキルが実装に当たるため。このファイルは spec-check というツールの受け入れ基準台帳としてのみ存在する。
+> **SPEC-FLOW に基本仕様書は無い。** 開発フローは AGENTS.md が基本仕様書相当（人間が合意する正本）、`issue-create` / `dev-cycle` スキルが実装に当たるため。このファイルは spec-check というツールの受け入れ基準台帳としてのみ存在する。
 
 ## 用語
 
 | 用語 | 意味 |
 |---|---|
-| 定義 | `docs/spec/` と `docs/design/` の `SPEC-*.md` のチェックボックス行に現れる SPEC-ID（規約上、基本仕様書にはチェックボックスを書かないため実質 `docs/design/` のみ） |
+| 定義 | `docs/spec/` と `docs/design/` の `*.md` のチェックボックス行に現れる SPEC-ID（規約上、基本仕様書にはチェックボックスを書かないため実質 `docs/design/` のみ） |
 | 参照 | `tests/` 配下のテストコード中に `SPEC-ID:`（直後にコロン）の形で現れる SPEC-ID |
 | untested | 定義があり参照がない ID |
 | orphan | 参照があり定義がない ID |
 | duplicate | 2 箇所以上で定義された ID |
 | pending | `- [ ]` のまま残っている受け入れ基準 |
-| apiDrift | `docs/design/SPEC-API.md` と `server/routes/` の間で片側にしか存在しないエンドポイント |
+| apiDrift | `docs/design/API.md` と `server/routes/` の間で片側にしか存在しないエンドポイント |
 
 ## 受け入れ基準
 
-- [x] `SPEC-FLOW-001` docs/spec と docs/design の SPEC-*.md のチェックボックス行から `SPEC-<領域>-<3桁>` 形式の ID を定義として抽出する
+- [x] `SPEC-FLOW-001` docs/spec と docs/design の *.md（README.md を除く）のチェックボックス行から `SPEC-<領域>-<3桁>` 形式の ID を定義として抽出する
 - [x] `SPEC-FLOW-002` 本文中の ID 言及（チェックボックス行以外）は定義として扱わない
 - [x] `SPEC-FLOW-003` テストコード中の `SPEC-ID:` 形式から参照を抽出する
 - [x] `SPEC-FLOW-004` 定義があり参照がない ID を untested として報告する
@@ -27,7 +27,7 @@
 - [x] `SPEC-FLOW-007` `- [ ]` のまま残る受け入れ基準を pending として報告する
 - [x] `SPEC-FLOW-008` untested / orphan / duplicate のいずれかが 1 件以上あれば ok=false を返す
 - [x] `SPEC-FLOW-009` pending は ok の判定に影響させない（作業中は残るのが正常なため警告扱い）
-- [x] `SPEC-FLOW-010` docs/design/SPEC-API.md のエンドポイント記述と server/routes の登録ルートを突き合わせ、片側のみのものを apiDrift として報告する
+- [x] `SPEC-FLOW-010` docs/design/API.md のエンドポイント記述と server/routes の登録ルートを突き合わせ、片側のみのものを apiDrift として報告する
 - [x] `SPEC-FLOW-011` API 側の定義とルートがともに 0 件のときは apiDrift 検査をスキップする
 - [x] `SPEC-FLOW-012` apiDrift が 1 件以上あれば ok=false を返す
 - [x] `SPEC-FLOW-013` 定義済み ID のうち `- [x]` のものに参照がなければ untested として報告する（チェック済みでもテストが無ければ不整合とみなす）
@@ -36,7 +36,7 @@
 
 ## 設計背景: コロン必須と予約領域（SPEC-FLOW-014 / 015 の理由）
 
-> 規範（テスト名の書き方・`SPEC-SAMPLE-` の使い方）の正本は `AGENTS.md` と `issue-cycle` スキル。ここに書くのは**なぜツールがこの仕様なのか**の記録のみ。
+> 規範（テスト名の書き方・`SPEC-SAMPLE-` の使い方）の正本は `AGENTS.md` と `dev-cycle` スキル。ここに書くのは**なぜツールがこの仕様なのか**の記録のみ。
 
 `spec-check` 自身のテストは、テストデータとして SPEC-ID 文字列を必ず含む。素朴に「テストコード中に現れる ID」を参照とみなすと、そのテストデータが孤児テストとして誤検出される。実際に Issue #1 でこれが発生した。これが参照認識を `SPEC-ID:`（直後にコロン）形式へ限定し（SPEC-FLOW-014）、`SPEC-SAMPLE-` を既定の除外プレフィクスとした（SPEC-FLOW-015）理由である。
 

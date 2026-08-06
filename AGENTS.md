@@ -12,8 +12,8 @@
 
 | スキル | 用途 |
 |---|---|
-| `issue-start` | Issue 作成〜着手準備（main 更新 → Spec 起案 → ブランチ作成） |
-| `issue-cycle` | Red → Green → verify → spec:check → commit → PR → クローズ |
+| `issue-create` | Issue の作成（GitHub 反映）まで |
+| `dev-cycle` | ブランチ作成 → 仕様書 → TDD → verify → spec:check → commit → PR → クローズ |
 | `project-review` | この PJ 固有のレビュー観点（漏洩・Spec 整合・ストリーム規律・コスト暗黙劣化） |
 
 ## このリポジトリの制約（最優先）
@@ -74,7 +74,7 @@ origin  ssh://git@ssh.github.com:443/Takashi-Fujie/coding_agent-viewer.git
 - `docs/spec/`（**基本仕様書**・人間向け）: ゴール・できること・確認方法。要件合意ゲートのレビュー対象
 - `docs/design/`（**詳細設計書**・AI 向け）: データモデル・実装方針・**受け入れ基準チェックボックス**・実測値
 
-サイクル: **Issue 読み込み → 基本仕様書反映 → 人間確認（要件合意）→ 詳細設計書反映（`- [ ]`）→ TDD（Red → Green）→ verify → spec:check → E2E（導入済み領域のみ）→ 人間動作確認 → `- [x]` 更新 → commit → PR（CI green まで確認）→ 人間レビュー・マージ**
+サイクル: **Issue 読み込み → 基本仕様書反映 → 仕様書の更新内容を人間が確認（要件合意）→ 詳細設計書反映（`- [ ]`）→ TDD（Red → Green）→ verify → spec:check → E2E（導入済み領域のみ）→ 人間動作確認 → `- [x]` 更新 → commit → PR（CI green まで確認）→ 人間レビュー・マージ**
 
 人間のゲートは 3 箇所（要件合意・動作確認・**PR マージ**）。**ゲートを跳ばして先へ進まない。** エージェントは `gh pr merge` を実行しない。 仕様書・設計書とコードは**同じ PR** に含める（diff で仕様変更をレビューできる状態を保つ）。
 
@@ -99,7 +99,7 @@ npm run spec:check  # Spec ↔ ソースの乖離検査
 
 **両方通るまで commit しない。** `spec:check` でずれが出たら「Spec を直す」か「実装を直す」かをユーザーに確認する（勝手にどちらかへ寄せない）。
 
-`verify` は Issue の進行に合わせて段階的に構成を増やす（実体の無いコマンドを並べても検証にならないため）。現在の構成と追加予定は `docs/design/SPEC-FLOW.md` の「段階導入の記録」を参照。
+`verify` は Issue の進行に合わせて段階的に構成を増やす（実体の無いコマンドを並べても検証にならないため）。現在の構成と追加予定は `docs/design/FLOW.md` の「段階導入の記録」を参照。
 
 ### セッションの区切りは Issue の区切り（`/compact` より優先）
 
@@ -110,9 +110,9 @@ npm run spec:check  # Spec ↔ ソースの乖離検査
 | 引き継ぎたいもの | 置き場所 |
 |---|---|
 | 開発フロー・commit 前ゲート・`gh` 運用・remote 設定 | この `AGENTS.md`（毎セッション自動ロード） |
-| 要件の正本（人間が確認するもの） | `docs/spec/SPEC-*.md`（基本仕様書） |
-| 受け入れ基準・データモデル・実測値 | `docs/design/SPEC-*.md`（詳細設計書） |
-| 規約の背景（`SPEC-SAMPLE-` 予約領域など） | `docs/design/SPEC-FLOW.md` |
+| 要件の正本（人間が確認するもの） | `docs/spec/*.md`（基本仕様書） |
+| 受け入れ基準・データモデル・実測値 | `docs/design/*.md`（詳細設計書） |
+| 規約の背景（`SPEC-SAMPLE-` 予約領域など） | `docs/design/FLOW.md` |
 | 工程・残タスク | GitHub Issue |
 | 設計方針・調査で確定したデータ構造 | `README.md` / 各 Spec |
 

@@ -1,6 +1,6 @@
 # SPEC-CHAT — セッション一覧とチャットビューア（詳細設計書）
 
-担当 Issue: #6。人間向けの基本仕様書は [docs/spec/SPEC-CHAT.md](../spec/SPEC-CHAT.md)。
+担当 Issue: #6。人間向けの基本仕様書は [docs/spec/CHAT.md](../spec/CHAT.md)。
 
 ## 実装方針
 

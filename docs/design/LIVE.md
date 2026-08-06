@@ -1,6 +1,6 @@
 # SPEC-LIVE — ファイル監視とライブ更新（詳細設計書）
 
-担当 Issue: #8。人間向けの基本仕様書は [docs/spec/SPEC-LIVE.md](../spec/SPEC-LIVE.md)。
+担当 Issue: #8。人間向けの基本仕様書は [docs/spec/LIVE.md](../spec/LIVE.md)。
 
 ## 実装方針
 
