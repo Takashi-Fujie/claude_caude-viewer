@@ -1,0 +1,1134 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>coding_agent-viewer — 画面モック</title>
+<style>
+  /* ============ トークン（dataviz 参照パレット） ============ */
+  :root {
+    color-scheme: light;
+    --page:       #f9f9f7;
+    --surface:    #fcfcfb;
+    --ink:        #0b0b0b;
+    --ink-2:      #52514e;
+    --muted:      #898781;
+    --grid:       #e1e0d9;
+    --baseline:   #c3c2b7;
+    --border:     rgba(11,11,11,0.10);
+    --s1: #2a78d6;  /* input */
+    --s2: #eb6834;  /* output */
+    --s3: #1baf7a;  /* cache write */
+    --s4: #eda100;  /* cache read */
+    --seq: #2a78d6;
+    --seq-track: #cde2fb;
+    --good: #0ca30c;
+    --good-text: #006300;
+    --warning: #fab219;
+    --serious: #ec835a;
+    --critical: #d03b3b;
+    --wash: rgba(42,120,214,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page:     #0d0d0d;
+      --surface:  #1a1a19;
+      --ink:      #ffffff;
+      --ink-2:    #c3c2b7;
+      --muted:    #898781;
+      --grid:     #2c2c2a;
+      --baseline: #383835;
+      --border:   rgba(255,255,255,0.10);
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --s4: #c98500;
+      --seq: #3987e5;
+      --seq-track: #184f95;
+      --good-text: #0ca30c;
+      --wash: rgba(57,135,229,0.14);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.55;
+    /* 設計基準: MacBook Pro 14" の論理解像度 1512×982 を最小幅とする。
+       それ未満の環境では縮めず横スクロールで比率を保つ。 */
+    min-width: 1512px;
+  }
+
+  /* ============ アプリ骨格 ============ */
+  .app { display: grid; grid-template-columns: 208px 1fr; height: 100vh; }
+  .nav {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 14px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .nav .brand { font-weight: 700; font-size: 14px; padding: 4px 10px 12px; }
+  .nav .brand small { display: block; font-weight: 400; color: var(--muted); font-size: 11px; }
+  .nav button {
+    all: unset; cursor: pointer; padding: 7px 10px; border-radius: 8px;
+    color: var(--ink-2); font-size: 13px; display: block; width: 100%;
+  }
+  .nav button:hover { background: var(--wash); }
+  .nav button.active { background: var(--wash); color: var(--ink); font-weight: 600; }
+  .nav .group { margin: 10px 10px 2px; font-size: 11px; color: var(--muted); }
+  .nav .foot { margin-top: auto; padding: 8px 10px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); }
+  .main { overflow: auto; }
+  .view { display: none; min-height: 100%; }
+  .view.active { display: block; }
+
+  .pagehead { padding: 18px 22px 0; }
+  .pagehead h1 { font-size: 17px; margin: 0 0 2px; }
+  .pagehead p { margin: 0; color: var(--muted); font-size: 12px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+  }
+  .card h2 { font-size: 13px; margin: 0 0 10px; font-weight: 600; }
+  .card h2 .est { font-weight: 400; color: var(--muted); font-size: 11px; margin-left: 6px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; padding: 1px 7px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--ink-2); background: transparent;
+  }
+  .badge.live { color: var(--good-text); border-color: var(--good); }
+  .badge.live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+  .badge.warn { color: var(--ink); border-color: var(--warning); }
+  .badge.unused { border-color: var(--serious); }
+
+  table { border-collapse: collapse; width: 100%; }
+  th { text-align: left; font-weight: 600; font-size: 11px; color: var(--muted); padding: 5px 10px 5px 0; border-bottom: 1px solid var(--grid); }
+  td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--grid); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11.5px; }
+  tr.rowlink { cursor: pointer; }
+  tr.rowlink:hover td { background: var(--wash); }
+
+  .pmeta { color: var(--muted); font-size: 11px; margin-left: 8px; }
+
+  /* ============ ダッシュボード共通 ============ */
+  .dashwrap { padding: 16px 22px 40px; display: flex; flex-direction: column; gap: 14px; }
+  .filterrow { display: flex; gap: 8px; align-items: center; }
+  .filterrow .presets { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .filterrow .presets button {
+    all: unset; cursor: pointer; padding: 6px 12px; font-size: 12px; color: var(--ink-2);
+    border-right: 1px solid var(--border);
+  }
+  .filterrow .presets button:last-child { border-right: none; }
+  .filterrow .presets button.on { background: var(--wash); color: var(--ink); font-weight: 600; }
+  .filterrow select {
+    font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+  }
+  .chip {
+    display: none; align-items: center; gap: 6px; font-size: 12px;
+    background: var(--wash); border: 1px solid var(--s1); color: var(--ink);
+    border-radius: 999px; padding: 3px 6px 3px 12px;
+  }
+  .chip.on { display: inline-flex; }
+  .chip button { all: unset; cursor: pointer; padding: 0 6px; color: var(--ink-2); font-size: 13px; }
+
+  .tiles { display: grid; grid-template-columns: 1.1fr 1fr 2.4fr; gap: 12px; }
+  .donuts { display: flex; gap: 28px; }
+  .donut { display: flex; gap: 14px; align-items: center; flex: 1; }
+  .dlegend { font-size: 11.5px; color: var(--ink-2); display: flex; flex-direction: column; gap: 3px; }
+  .dlegend .t { font-weight: 600; color: var(--ink); font-size: 11px; margin-bottom: 1px; }
+  .dlegend .r { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  .dlegend .r i { width: 8px; height: 8px; border-radius: 2px; }
+  .dlegend .r .pct { color: var(--muted); }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; }
+  .tile .lb { font-size: 11.5px; color: var(--ink-2); }
+  .tile .lb .est { color: var(--muted); }
+  .tile .v { font-size: 26px; font-weight: 600; margin: 2px 0; }
+  .tile.hero .v { font-size: 40px; }
+  .tile .delta { font-size: 11px; color: var(--good-text); }
+  .tile .delta.up-bad { color: var(--critical); }
+
+  .warnbanner {
+    border: 1px solid var(--warning); background: var(--surface);
+    border-radius: 10px; padding: 10px 14px; display: flex; gap: 10px; align-items: baseline;
+    font-size: 12.5px;
+  }
+  .warnbanner .ic { color: var(--warning); font-weight: 700; }
+
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: baseline; }
+
+  .hbar { display: grid; grid-template-columns: 128px minmax(0,1fr) 74px; gap: 10px; align-items: center; padding: 3px 0; border-radius: 6px; }
+  .hbar.rowlink { cursor: pointer; }
+  .hbar.rowlink:hover { background: var(--wash); }
+  .hbar .lb { font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar .track { height: 14px; display: flex; align-items: center; }
+  .hbar .track i { display: block; height: 14px; border-radius: 0 4px 4px 0; background: var(--seq); min-width: 2px; }
+  .hbar .val { font-size: 11.5px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .tooltip {
+    position: fixed; pointer-events: none; z-index: 50; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 11.5px; box-shadow: 0 4px 14px rgba(0,0,0,.14);
+    min-width: 160px;
+  }
+  .tooltip .d { font-weight: 600; margin-bottom: 4px; }
+  .tooltip .r { display: flex; justify-content: space-between; gap: 14px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .tooltip .r i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+
+  .tree { font-size: 12px; }
+  .tree .node { padding: 2px 0; }
+  .tree .node .dur { color: var(--muted); font-size: 11px; margin-left: 8px; }
+  .tree .kids { border-left: 1px solid var(--grid); margin-left: 7px; padding-left: 14px; }
+
+  .cfggrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .note { color: var(--muted); font-size: 11px; margin-top: 8px; }
+  .sectionlabel { font-size: 12px; font-weight: 700; color: var(--muted); margin: 6px 2px -6px; }
+
+  /* ============ セッション分析（ドリルダウン先） ============ */
+  .crumbs { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); padding: 14px 22px 0; }
+  .crumbs a { color: var(--s1); text-decoration: none; cursor: pointer; }
+  .crumbs .sep { color: var(--baseline); }
+  .chathead {
+    padding: 10px 22px 12px; border-bottom: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .chathead .t { font-weight: 700; font-size: 15px; }
+  .chathead .sub { color: var(--muted); font-size: 11px; width: 100%; }
+  .chatbody { padding: 20px 22px 40px; }
+  .msg { margin: 0 0 14px; }
+  .msg .who { font-size: 11px; color: var(--muted); margin-bottom: 3px; display: flex; gap: 8px; align-items: baseline; }
+  .msg .who b { color: var(--ink-2); font-weight: 600; }
+  .bubble {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px;
+  }
+  .msg.user .bubble { background: var(--wash); border-color: transparent; }
+  .msg .cost { margin-top: 4px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  details.tool {
+    border: 1px solid var(--grid); border-radius: 8px; margin: 8px 0 2px;
+    background: var(--page); overflow: hidden;
+  }
+  details.tool summary {
+    cursor: pointer; padding: 6px 10px; font-size: 11.5px; color: var(--ink-2);
+    display: flex; gap: 8px; align-items: center; list-style: none;
+  }
+  details.tool summary::before { content: "▸"; color: var(--muted); font-size: 10px; }
+  details.tool[open] summary::before { content: "▾"; }
+  details.tool .body { border-top: 1px solid var(--grid); padding: 8px 10px; }
+  details.tool pre { margin: 0; white-space: pre-wrap; font-size: 11px; color: var(--ink-2); }
+  .toolname { font-family: ui-monospace, Menlo, monospace; font-weight: 600; color: var(--ink); }
+
+  /* 種別チップ: 会話内で model / tool / MCP / agent / skill の使用箇所を示す
+     （文字は常に ink、色はドットだけが持つ — text-never-wears-data-color の規律） */
+  .kind {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; font-weight: 600; color: var(--ink-2);
+    padding: 0 6px; border: 1px solid var(--grid); border-radius: 4px; background: var(--surface);
+  }
+  .kind::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: var(--kc, var(--muted)); }
+  .k-tool  { --kc: var(--s1); }
+  .k-mcp   { --kc: var(--s2); }
+  .k-agent { --kc: var(--s3); }
+  .k-skill { --kc: var(--s4); }
+  .k-model { --kc: transparent; }
+  .k-model::before { display: none; }
+  .kindlegend {
+    display: flex; gap: 14px; font-size: 11px; color: var(--muted);
+    padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--grid);
+  }
+  .kindlegend .kind { font-size: 10px; }
+  .err { color: var(--critical); font-weight: 600; }
+  .divider {
+    margin: 18px 0; display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 11px;
+  }
+  .divider::before, .divider::after { content: ""; flex: 1; border-top: 1px dashed var(--baseline); }
+  .sidechain { margin: 0 0 14px; border-left: 3px solid var(--s3); padding-left: 12px; }
+  .sidechain > details > summary {
+    cursor: pointer; list-style: none; font-size: 12px; color: var(--ink-2);
+    display: flex; gap: 8px; align-items: center;
+  }
+  .sidechain .inner { padding-top: 8px; }
+  .livebar {
+    margin: 6px 0 0; font-size: 11.5px; color: var(--good-text);
+    display: flex; gap: 6px; align-items: center;
+  }
+  .livebar::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--good);
+    animation: pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ 左ナビ（セッションはメニューから外し、Overview からドリルダウンする） ============ -->
+  <nav class="nav">
+    <div class="brand">agent-viewer<small>Claude Code ログビューア</small></div>
+    <div class="group">ダッシュボード</div>
+    <button data-v="overview" class="active">Overview</button>
+    <button data-v="tools">Tools &amp; Agents</button>
+    <div class="group">環境</div>
+    <button data-v="config">設定・定義</button>
+    <div class="foot">127.0.0.1:7080<br>ローカル専用・外部公開なし</div>
+  </nav>
+
+  <main class="main">
+
+  <!-- ============ 1. Overview（起点。ここからプロジェクト / セッションへ降りる） ============ -->
+  <section id="view-overview" class="view active">
+    <div class="pagehead"><h1>Overview</h1><p>全体俯瞰 → 気になるプロジェクト・セッションを選んで分析へ。コストはすべて pricing.json に基づく推定値。</p></div>
+    <div class="dashwrap">
+
+      <div class="filterrow">
+        <div class="presets">
+          <button>今日</button><button class="on">7日</button><button>30日</button><button>90日</button><button>月初来</button>
+        </div>
+        <span class="chip" id="dateChip"><b id="dateChipLabel"></b>&nbsp;に活動したプロジェクト<button onclick="clearDay()">✕</button></span>
+      </div>
+
+      <div class="warnbanner">
+        <span class="ic">⚠</span>
+        <span><b>未知モデル 2 件</b>（<code>experimental-x1</code> 他）の単価が pricing.json にありません。該当分はコストに<b>含まれていません</b>（0 円扱いにはしていません）。</span>
+        <a href="#" style="margin-left:auto; color: var(--s1);">pricing.json を編集</a>
+      </div>
+
+      <div class="tiles">
+        <div class="tile hero">
+          <div class="lb">総コスト <span class="est">（推定・7日間）</span></div>
+          <div class="v">$12.47</div>
+          <div class="delta up-bad">▲ +18% vs 前の7日</div>
+        </div>
+        <div class="tile">
+          <div class="lb">総トークン</div>
+          <div class="v">48.2M</div>
+          <div class="delta">cache read が 82% を占有</div>
+        </div>
+        <div class="card">
+          <h2>モデル別利用状況<span class="est">トークン / コスト推定</span></h2>
+          <div class="donuts">
+            <div class="donut"><svg id="donutTok" width="112" height="112"></svg><div class="dlegend" id="donutTokLegend"></div></div>
+            <div class="donut"><svg id="donutCost" width="112" height="112"></svg><div class="dlegend" id="donutCostLegend"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>日次トークンとコスト<span class="est">積み上げ + 推定コスト・直近14日・日付クリックでその日のプロジェクトに絞り込み</span></h2>
+        <div class="legend">
+          <span><i style="background:var(--s1)"></i>input</span>
+          <span><i style="background:var(--s2)"></i>output</span>
+          <span><i style="background:var(--s3)"></i>cache write</span>
+          <span><i style="background:var(--s4)"></i>cache read</span>
+        </div>
+        <svg id="comboChart" width="100%" height="330" role="img" aria-label="日次トークン積み上げとコスト推移"></svg>
+      </div>
+
+      <div class="card">
+        <h2>プロジェクト<span class="est">クリックでプロジェクト画面へ</span></h2>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input type="search" placeholder="全セッション横断検索（本文 grep）…"
+                 style="font:inherit; color:var(--ink); background:var(--page); border:1px solid var(--border); border-radius:8px; padding:6px 10px; width:340px;">
+          <select style="font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 10px;">
+            <option>並び: 最終更新</option><option>並び: コスト</option><option>並び: セッション数</option>
+          </select>
+        </div>
+        <table id="projTable">
+          <thead><tr><th style="width:42%">プロジェクト</th><th class="num">セッション</th><th class="num">msg</th><th class="num">トークン</th><th class="num">コスト推定</th><th>最終更新</th><th></th></tr></thead>
+          <tbody>
+            <tr class="rowlink" data-proj="sample-app" onclick="openProject()">
+              <td><b>sample-app</b> <span class="pmeta">~/projects/sample-app</span></td>
+              <td class="num">14</td><td class="num">2,410</td><td class="num">31.2M</td><td class="num"><b>$7.90</b></td><td>14:02</td>
+              <td><span class="badge live">1 ライブ</span></td>
+            </tr>
+            <tr class="rowlink" data-proj="web-shop" onclick="openProject()">
+              <td><b>web-shop</b> <span class="pmeta">~/projects/web-shop</span></td>
+              <td class="num">9</td><td class="num">1,120</td><td class="num">11.6M</td><td class="num"><b>$3.10</b></td><td>11:40</td>
+              <td></td>
+            </tr>
+            <tr class="rowlink" data-proj="data-pipeline" onclick="openProject()">
+              <td><b>data-pipeline</b> <span class="pmeta">~/work/data-pipeline</span></td>
+              <td class="num">5</td><td class="num">420</td><td class="num">4.9M</td><td class="num"><b>$1.20</b></td><td>8/03</td>
+              <td></td>
+            </tr>
+            <tr class="rowlink" data-proj="その他" onclick="openProject()">
+              <td><b>その他</b> <span class="pmeta">9 プロジェクト</span></td>
+              <td class="num">9</td><td class="num">240</td><td class="num">0.5M</td><td class="num"><b>$0.27</b></td><td>7/30</td>
+              <td></td>
+            </tr>
+            <tr id="noProjRow" style="display:none">
+              <td colspan="7" style="color:var(--muted); padding:14px 0;">この日に活動したプロジェクトはありません</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>モデル別内訳<span class="est">テーブルビュー</span></h2>
+        <table>
+          <thead><tr><th>モデル</th><th class="num">msg</th><th class="num">input</th><th class="num">output</th><th class="num">cache write (5m/1h)</th><th class="num">cache read</th><th class="num">コスト推定</th></tr></thead>
+          <tbody>
+            <tr><td>opus-4.6</td><td class="num">1,208</td><td class="num">1.21M</td><td class="num">0.84M</td><td class="num">1.9M / 0.2M</td><td class="num">28.4M</td><td class="num">$9.12</td></tr>
+            <tr><td>sonnet-4.5</td><td class="num">2,410</td><td class="num">0.9M</td><td class="num">0.6M</td><td class="num">1.1M / 0</td><td class="num">10.2M</td><td class="num">$2.86</td></tr>
+            <tr><td>haiku-4.5</td><td class="num">3,102</td><td class="num">0.4M</td><td class="num">0.2M</td><td class="num">0.3M / 0</td><td class="num">1.9M</td><td class="num">$0.49</td></tr>
+            <tr><td>experimental-x1 <span class="badge warn">⚠ 単価未登録</span></td><td class="num">14</td><td class="num">8.1K</td><td class="num">3.2K</td><td class="num">0 / 0</td><td class="num">0</td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 2. プロジェクト画面（Overview からのドリルダウン先。ナビ項目ではない） ============ -->
+  <section id="view-project" class="view">
+    <div class="crumbs">
+      <a onclick="backToOverview()">← Overview</a><span class="sep">/</span>
+      <span>sample-app</span>
+    </div>
+    <div class="chathead" style="margin-top:10px;">
+      <span class="t">sample-app</span>
+      <span class="badge live">1 ライブ</span>
+      <span class="badge">14 セッション</span>
+      <span class="badge">31.2M tok</span>
+      <span class="badge">$7.90 推定</span>
+      <div class="sub mono">~/projects/sample-app · 期間: 直近7日</div>
+    </div>
+    <div class="dashwrap">
+
+      <div class="card">
+        <h2>日次モデル別トークンとコスト<span class="est">このプロジェクト・積み上げ + 推定コスト・直近14日・x 軸共有</span></h2>
+        <div class="legend">
+          <span><i style="background:var(--s1)"></i>opus-4.6</span>
+          <span><i style="background:var(--s2)"></i>sonnet-4.5</span>
+          <span><i style="background:var(--s3)"></i>haiku-4.5</span>
+        </div>
+        <svg id="projComboChart" width="100%" height="330" role="img" aria-label="プロジェクトの日次モデル別トークン積み上げとコスト推移"></svg>
+      </div>
+
+      <div class="card">
+        <h2>セッション<span class="est">クリックで会話分析へ・グラフの日付クリックで絞り込み</span>
+          <span class="chip" id="pjDateChip" style="margin-left:10px;"><b id="pjDateChipLabel"></b>&nbsp;に活動したセッション<button onclick="clearPjDay()">✕</button></span></h2>
+        <div style="display:flex; gap:8px; margin-bottom:10px;">
+          <input type="search" placeholder="このプロジェクト内を検索…"
+                 style="font:inherit; color:var(--ink); background:var(--page); border:1px solid var(--border); border-radius:8px; padding:6px 10px; width:300px;">
+          <select style="font:inherit; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 10px;">
+            <option>並び: 最終更新</option><option>並び: コスト</option><option>並び: メッセージ数</option>
+          </select>
+        </div>
+        <table id="sessTable">
+          <thead><tr><th style="width:40%">セッション</th><th>ブランチ</th><th class="num">msg</th><th class="num">トークン</th><th class="num">コスト推定</th><th>最終更新</th><th></th></tr></thead>
+          <tbody>
+            <tr class="rowlink" data-sess="s1" onclick="openSession()">
+              <td><b>認証まわりのリファクタリング</b></td><td class="mono">feat/42-auth</td>
+              <td class="num">312</td><td class="num">4.2M</td><td class="num">$1.84</td><td>14:02</td><td><span class="badge live">ライブ</span></td>
+            </tr>
+            <tr class="rowlink" data-sess="s2" onclick="openSession()">
+              <td><b>E2E テストの安定化</b></td><td class="mono">main</td>
+              <td class="num">204</td><td class="num">2.6M</td><td class="num">$1.10</td><td>昨日</td><td><span class="badge warn">⚠ 未知モデル</span></td>
+            </tr>
+            <tr class="rowlink" data-sess="s3" onclick="openSession()">
+              <td><b>ダークモード対応</b></td><td class="mono">feat/38-dark</td>
+              <td class="num">150</td><td class="num">1.8M</td><td class="num">$0.71</td><td>8/02</td><td></td>
+            </tr>
+            <tr class="rowlink" data-sess="s4" onclick="openSession()">
+              <td><b>API レート制限の調査</b></td><td class="mono">main</td>
+              <td class="num">88</td><td class="num">0.9M</td><td class="num">$0.38</td><td>8/01</td><td></td>
+            </tr>
+            <tr id="moreSessRow"><td colspan="7"><a style="color:var(--s1); font-size:11.5px; cursor:pointer;">残り 10 セッションを表示…</a></td></tr>
+            <tr id="noSessRow" style="display:none">
+              <td colspan="7" style="color:var(--muted); padding:14px 0;">この日に活動したセッションはありません</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 3. セッション分析（プロジェクト画面からのドリルダウン先。ナビ項目ではない） ============ -->
+  <section id="view-session" class="view">
+    <div class="crumbs">
+      <a onclick="backToOverview()">← Overview</a><span class="sep">/</span>
+      <a onclick="openProject()">sample-app</a><span class="sep">/</span>
+      <span>認証まわりのリファクタリング</span>
+    </div>
+    <div class="chathead" style="margin-top:10px;">
+      <span class="t">認証まわりのリファクタリング</span>
+      <span class="badge live">ライブ更新中</span>
+      <span class="badge">opus-4.6</span>
+      <span class="badge">合計 4.2M tok</span>
+      <span class="badge">$1.84 推定</span>
+      <div class="sub mono">~/projects/sample-app · feat/42-auth · a1b2c3d4-… · v2.1.220 · 破損 0 行スキップ</div>
+    </div>
+    <div class="dashwrap" style="padding-bottom:0;">
+      <div class="sectionlabel">このセッションの利用状況</div>
+
+      <div class="card">
+        <h2>やりとり別コスト<span class="est">ユーザー入力ごと・subagent 含む・推定・棒クリックでそのやりとりに絞り込み</span>
+          <span class="chip" id="turnChip" style="margin-left:10px;">やりとり <b id="turnChipLabel"></b> のみ表示<button onclick="clearTurn()">✕</button></span></h2>
+        <svg id="turnChart" width="100%" height="150" role="img" aria-label="ユーザー入力ごとの推定コスト棒グラフ"></svg>
+        <div class="note">#1〜#5 は compact で要約済みのやりとり（本文は開けないためクリック不可）</div>
+      </div>
+
+      <div class="cols2">
+        <div class="card">
+          <h2>ツール別ランキング<span class="est">このセッション・呼び出し回数</span></h2>
+          <div id="sessToolBars"></div>
+        </div>
+        <div class="card">
+          <h2>MCP サーバ / subagent / Skill<span class="est">このセッション</span></h2>
+          <table>
+            <thead><tr><th>種別</th><th>名前</th><th class="num">回数</th><th>備考</th></tr></thead>
+            <tbody>
+              <tr><td>MCP</td><td class="mono">github</td><td class="num">12</td><td class="mono">create_pr, list_issues</td></tr>
+              <tr><td>subagent</td><td class="mono">Explore</td><td class="num">1</td><td>22 msg · $0.014</td></tr>
+              <tr><td>subagent</td><td class="mono">implementer</td><td class="num">1</td><td>64 msg · $0.31</td></tr>
+              <tr><td>subagent</td><td class="mono">reviewer</td><td class="num">1</td><td>30 msg · $0.12</td></tr>
+              <tr><td>skill</td><td class="mono">dev-cycle</td><td class="num">1</td><td>今日 14:05</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="chatbody">
+
+      <div class="kindlegend">
+        <span>使用箇所の凡例:</span>
+        <span class="kind k-tool">tool</span>
+        <span class="kind k-mcp">MCP</span>
+        <span class="kind k-agent">agent</span>
+        <span class="kind k-skill">skill</span>
+        <span class="kind k-model">model</span>
+      </div>
+
+      <div class="msg user" data-turn="t6">
+        <div class="who"><b>User</b><span>14:02:11</span></div>
+        <div class="bubble">ログイン処理が肥大化してきたので、セッション管理を分離してリファクタリングしたい。まず現状を調べて方針を出して。</div>
+      </div>
+
+      <div class="msg assistant" data-turn="t6">
+        <div class="who"><b>Assistant</b><span>14:02:19</span><span class="kind k-model">opus-4.6</span><span class="badge">thinking</span></div>
+        <div class="bubble">
+          現状の auth モジュールを調査します。まず該当ファイルを確認します。
+          <details class="tool">
+            <summary><span class="kind k-tool">tool</span><span class="toolname">Read</span> src/auth/login.ts</summary>
+            <div class="body"><pre>1  import { createSession } from './session'
+2  export async function login(req) { …（412 行） }</pre></div>
+          </details>
+          <details class="tool">
+            <summary><span class="kind k-tool">tool</span><span class="toolname">Bash</span> grep -r "createSession" src/ — 14 件</summary>
+            <div class="body"><pre>src/auth/login.ts:1
+src/auth/refresh.ts:3
+…</pre></div>
+          </details>
+          login.ts にセッション生成・検証・更新の 3 責務が同居しています。SessionStore を切り出す方針を提案します。
+        </div>
+        <div class="cost">in 1,204 · out 862 · cache read 45.1K · cache write 2.3K（5m 2.1K / 1h 0.2K）· $0.021 推定</div>
+      </div>
+
+      <div class="divider" data-turn="t6">ターン完了 · 42 秒</div>
+
+      <div class="msg user" data-turn="t7">
+        <div class="who"><b>User</b><span>14:05:40</span></div>
+        <div class="bubble">その方針で進めて。テストも書いて。</div>
+      </div>
+
+      <div class="sidechain" data-turn="t7">
+        <details>
+          <summary><span class="kind k-agent">agent</span><span class="toolname">Explore</span> セッション利用箇所の洗い出し<span class="kind k-model">haiku-4.5</span>（sidechain · 22 msg）</summary>
+          <div class="inner">
+            <div class="msg assistant">
+              <div class="bubble">src/ 配下 14 ファイルで createSession を参照。テストは 3 ファイル。循環参照なし。</div>
+              <div class="cost">in 8.2K · out 1.1K · $0.014 推定</div>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div class="msg assistant" data-turn="t7">
+        <div class="who"><b>Assistant</b><span>14:08:52</span><span class="kind k-model">opus-4.6</span></div>
+        <div class="bubble">
+          SessionStore を新設し、login.ts から 3 責務を移しました。
+          <details class="tool">
+            <summary><span class="kind k-tool">tool</span><span class="toolname">Edit</span> src/auth/session-store.ts（新規）</summary>
+            <div class="body"><pre>export class SessionStore { … }</pre></div>
+          </details>
+          <details class="tool" open>
+            <summary><span class="kind k-tool">tool</span><span class="toolname">Bash</span> npm test — <span class="err">失敗 (exit 1)</span></summary>
+            <div class="body"><pre>FAIL tests/auth/login.test.ts
+  ● refresh 時に旧セッションを破棄する
+    expected 1 call, got 0</pre></div>
+          </details>
+          refresh 経路の破棄処理が漏れていました。修正します。
+        </div>
+        <div class="cost">in 2,010 · out 3,455 · cache read 102.4K · cache write 8.9K · $0.087 推定</div>
+      </div>
+
+      <div class="divider" data-turn="t8">─ compact ─ 以前の会話 118 メッセージを要約</div>
+
+      <div class="msg user" data-turn="t8">
+        <div class="who"><b>User</b><span>15:21:03</span></div>
+        <div class="bubble">PR まで作って。</div>
+      </div>
+
+      <div class="msg assistant" data-turn="t8">
+        <div class="who"><b>Assistant</b><span>15:21:10</span><span class="kind k-model">sonnet-4.5</span></div>
+        <div class="bubble">
+          dev-cycle スキルの手順に沿って commit → PR を進めます。
+          <details class="tool">
+            <summary><span class="kind k-skill">skill</span><span class="toolname">dev-cycle</span> 手順を読み込み</summary>
+            <div class="body"><pre>verify → spec:check → commit → PR の順で進める…</pre></div>
+          </details>
+          <details class="tool">
+            <summary><span class="kind k-tool">tool</span><span class="toolname">Bash</span> npm run verify — 成功</summary>
+            <div class="body"><pre>typecheck ✓  lint ✓  test:unit ✓（34 passed）</pre></div>
+          </details>
+          <details class="tool">
+            <summary><span class="kind k-mcp">MCP</span><span class="toolname">github · create_pr</span> PR #42 を作成</summary>
+            <div class="body"><pre>feat: SessionStore を分離 (Closes #42)
+https://github.com/example/sample-app/pull/42</pre></div>
+          </details>
+          PR #42 を作成しました。CI の完了を待っています。
+        </div>
+        <div class="cost">in 1,420 · out 980 · cache read 88.2K · cache write 4.1K · $0.019 推定</div>
+      </div>
+
+      <div class="livebar">ライブ更新中 — 追記を検知すると自動で反映されます</div>
+    </div>
+  </section>
+
+  <!-- ============ 3. Tools & Agents（旧 Tools & MCP + Agents & Skills を統合） ============ -->
+  <section id="view-tools" class="view">
+    <div class="pagehead"><h1>Tools &amp; Agents</h1><p>ツール・MCP・エージェント・スキルの利用状況。プロジェクトで絞り込める。</p></div>
+    <div class="dashwrap">
+      <div class="filterrow">
+        <div class="presets"><button>今日</button><button class="on">7日</button><button>30日</button></div>
+        <select>
+          <option>すべてのプロジェクト</option>
+          <option>sample-app</option>
+          <option>web-shop</option>
+          <option>data-pipeline</option>
+        </select>
+      </div>
+
+      <div class="sectionlabel">ツール / MCP</div>
+      <div class="cols2">
+        <div class="card">
+          <h2>ツール別ランキング<span class="est">呼び出し回数</span></h2>
+          <div id="toolBars"></div>
+        </div>
+        <div class="card">
+          <h2>失敗率<span class="est">is_error / stderr から算出</span></h2>
+          <table>
+            <thead><tr><th>ツール</th><th class="num">呼出</th><th class="num">失敗</th><th class="num">失敗率</th></tr></thead>
+            <tbody>
+              <tr><td>Bash</td><td class="num">1,842</td><td class="num">201</td><td class="num">10.9%</td></tr>
+              <tr><td>Edit</td><td class="num">920</td><td class="num">64</td><td class="num">7.0%</td></tr>
+              <tr><td>mcp__github__create_pr</td><td class="num">31</td><td class="num">6</td><td class="num" style="color:var(--critical); font-weight:600">19.4% ▲</td></tr>
+              <tr><td>Read</td><td class="num">2,204</td><td class="num">12</td><td class="num">0.5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>プロジェクト別ツール利用<span class="est">呼び出し回数・上位ツール</span></h2>
+        <table>
+          <thead><tr><th>プロジェクト</th><th class="num">Read</th><th class="num">Bash</th><th class="num">Edit</th><th class="num">Grep</th><th class="num">MCP 計</th><th class="num">合計</th><th class="num">失敗率</th></tr></thead>
+          <tbody>
+            <tr class="rowlink"><td>sample-app</td><td class="num">1,204</td><td class="num">988</td><td class="num">512</td><td class="num">402</td><td class="num">231</td><td class="num">3,610</td><td class="num">6.2%</td></tr>
+            <tr class="rowlink"><td>web-shop</td><td class="num">640</td><td class="num">551</td><td class="num">296</td><td class="num">201</td><td class="num">122</td><td class="num">2,120</td><td class="num">8.4%</td></tr>
+            <tr class="rowlink"><td>data-pipeline</td><td class="num">360</td><td class="num">303</td><td class="num">112</td><td class="num">112</td><td class="num">55</td><td class="num">1,010</td><td class="num">4.1%</td></tr>
+          </tbody>
+        </table>
+        <div class="note">行クリックでそのプロジェクトに絞り込み（上のランキング・失敗率も連動）</div>
+      </div>
+
+      <div class="cols2">
+        <div class="card">
+          <h2>MCP サーバ別内訳<span class="est">mcp__&lt;server&gt;__&lt;tool&gt; を分解</span></h2>
+          <table>
+            <thead><tr><th>サーバ</th><th>主なツール</th><th class="num">呼出</th><th class="num">失敗率</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">github</td><td class="mono">create_pr, list_issues</td><td class="num">204</td><td class="num">4.4%</td></tr>
+              <tr><td class="mono">playwright</td><td class="mono">navigate, screenshot</td><td class="num">156</td><td class="num">1.9%</td></tr>
+              <tr><td class="mono">db-inspector</td><td class="mono">query</td><td class="num">48</td><td class="num">0%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>hook 発火履歴</h2>
+          <table>
+            <thead><tr><th>時刻</th><th>hook</th><th>マッチ</th><th>結果</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">14:08</td><td class="mono">PreToolUse</td><td class="mono">Bash(git push*)</td><td><span class="badge">ask → 許可</span></td></tr>
+              <tr><td class="mono">13:52</td><td class="mono">PostToolUse</td><td class="mono">Edit</td><td><span class="badge">prettier 実行</span></td></tr>
+              <tr><td class="mono">11:20</td><td class="mono">PreToolUse</td><td class="mono">Bash(rm -rf*)</td><td><span class="badge" style="border-color:var(--critical); color:var(--critical)">deny</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="sectionlabel">エージェント / スキル</div>
+      <div class="cols2">
+        <div class="card">
+          <h2>エージェント定義 × 起動実績<span class="est">30日</span></h2>
+          <table>
+            <thead><tr><th>エージェント</th><th>model</th><th class="num">起動</th><th>状態</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">planner</td><td>opus</td><td class="num">42</td><td></td></tr>
+              <tr><td class="mono">implementer</td><td>sonnet</td><td class="num">38</td><td></td></tr>
+              <tr><td class="mono">reviewer</td><td>opus</td><td class="num">17</td><td></td></tr>
+              <tr><td class="mono">e2e-test-runner</td><td>sonnet</td><td class="num">6</td><td></td></tr>
+              <tr><td class="mono">statusline-setup</td><td>haiku</td><td class="num">0</td><td><span class="badge unused">⏸ 90日以上未使用</span></td></tr>
+              <tr><td class="mono">old-migrator</td><td>sonnet</td><td class="num">0</td><td><span class="badge unused">⏸ 起動実績なし</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>Skill 呼び出し履歴<span class="est">30日</span></h2>
+          <table>
+            <thead><tr><th>スキル</th><th class="num">呼出</th><th>最終使用</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">dev-cycle</td><td class="num">21</td><td>今日 14:05</td></tr>
+              <tr><td class="mono">issue-create</td><td class="num">9</td><td>昨日</td></tr>
+              <tr><td class="mono">project-review</td><td class="num">7</td><td>8/04</td></tr>
+              <tr><td class="mono">dataviz</td><td class="num">2</td><td>7/28</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>subagent 実行トレース<span class="est">セッション: 認証まわりのリファクタリング</span></h2>
+        <div class="tree">
+          <div class="node">◆ main（opus-4.6）<span class="dur">312 msg · $1.84 推定</span></div>
+          <div class="kids">
+            <div class="node">◇ Explore — セッション利用箇所の洗い出し<span class="dur">22 msg · 41s · $0.014</span></div>
+            <div class="node">◇ implementer — SessionStore 実装<span class="dur">64 msg · 6m12s · $0.31</span></div>
+            <div class="kids">
+              <div class="node">◇ e2e-test-runner — 回帰テスト実行<span class="dur">18 msg · 2m03s · $0.06</span></div>
+            </div>
+            <div class="node">◇ reviewer — 差分レビュー<span class="dur">30 msg · 3m40s · $0.12</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. Config ============ -->
+  <section id="view-config" class="view">
+    <div class="pagehead"><h1>設定・定義</h1><p>~/.claude/ 配下の設定・定義の可視化。画面表示のみ（Spec・Issue・PR への転記は禁止）。</p></div>
+    <div class="dashwrap">
+      <div class="cfggrid">
+        <div class="card">
+          <h2>settings.json — hooks</h2>
+          <table>
+            <thead><tr><th>イベント</th><th>マッチャ</th><th>動作</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">PreToolUse</td><td class="mono">Bash(git push*)</td><td class="mono">confirm.sh</td></tr>
+              <tr><td class="mono">PostToolUse</td><td class="mono">Edit|Write</td><td class="mono">format.sh</td></tr>
+              <tr><td class="mono">SessionStart</td><td class="mono">*</td><td class="mono">load-env.sh</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>settings.json — permissions</h2>
+          <table>
+            <thead><tr><th>種別</th><th class="num">件数</th><th>例</th></tr></thead>
+            <tbody>
+              <tr><td>allow</td><td class="num">24</td><td class="mono">Bash(npm run *) …</td></tr>
+              <tr><td>ask</td><td class="num">6</td><td class="mono">Bash(git push*) …</td></tr>
+              <tr><td>deny</td><td class="num">3</td><td class="mono">Read(.env*) …</td></tr>
+            </tbody>
+          </table>
+          <div class="note">実値はこの画面のみに表示。外部への転記は禁止（public リポジトリ運用）。</div>
+        </div>
+        <div class="card">
+          <h2>エージェント定義<span class="est">~/.claude/agents/ · 8 件</span></h2>
+          <table>
+            <thead><tr><th>名前</th><th>model</th><th>tools</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">planner</td><td>opus</td><td class="mono">Read, Glob, Grep, WebFetch…</td></tr>
+              <tr><td class="mono">implementer</td><td>sonnet</td><td class="mono">Read, Write, Edit, Bash…</td></tr>
+              <tr><td class="mono">reviewer</td><td>opus</td><td class="mono">Read, Bash, Glob…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h2>スキル / プラグイン</h2>
+          <table>
+            <thead><tr><th>名前</th><th>種別</th><th>スコープ</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">dev-cycle</td><td>skill</td><td>project</td></tr>
+              <tr><td class="mono">issue-create</td><td>skill</td><td>project</td></tr>
+              <tr><td class="mono">commit-commands</td><td>plugin</td><td>user</td></tr>
+              <tr><td class="mono">anthropic-skills</td><td>plugin</td><td>user</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<div class="tooltip" id="tt"></div>
+
+<script>
+  // ---- ナビ切り替え ----
+  function showView(v) {
+    document.querySelectorAll('.nav button').forEach(x => x.classList.toggle('active', x.dataset.v === v));
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+    document.getElementById('view-' + v).classList.add('active');
+    document.querySelector('.main').scrollTop = 0;
+    renderCharts(); // 非表示中は svg の幅が取れないため、表示切替時に再描画する
+  }
+  document.querySelectorAll('.nav button[data-v]').forEach(b =>
+    b.addEventListener('click', () => showView(b.dataset.v)));
+
+  // ---- ドリルダウン（Overview → プロジェクト → セッション分析） ----
+  function openProject() { showView('project'); }
+  function openSession() { showView('session'); }
+  function backToOverview() { showView('overview'); }
+
+  // ---- 日次トークン積み上げ + コスト折れ線（x 軸共有・合成データ） ----
+  const days = ['7/24','7/25','7/26','7/27','7/28','7/29','7/30','7/31','8/1','8/2','8/3','8/4','8/5','8/6'];
+  const series = [
+    { key: 'input',       color: 'var(--s1)', vals: [0.3,0.4,0.2,0.5,0.1,0.0,0.4,0.6,0.5,0.3,0.0,0.2,0.7,0.4] },
+    { key: 'output',      color: 'var(--s2)', vals: [0.2,0.3,0.1,0.3,0.1,0.0,0.3,0.4,0.3,0.2,0.0,0.1,0.5,0.3] },
+    { key: 'cache write', color: 'var(--s3)', vals: [0.5,0.7,0.3,0.8,0.2,0.0,0.6,0.9,0.8,0.5,0.0,0.3,1.1,0.6] },
+    { key: 'cache read',  color: 'var(--s4)', vals: [2.8,3.9,1.6,4.4,1.0,0.0,3.4,5.2,4.6,2.9,0.0,1.8,6.4,3.5] },
+  ];
+  const cost = [1.05,1.62,0.68,1.88,0.41,0,1.38,2.21,1.92,1.18,0,0.79,2.64,1.46]; // $/日（推定）
+  // その日に活動があったプロジェクト（合成データ。実装ではインデックスの日別集計から得る）
+  const projByDay = [
+    ['sample-app','その他'],            // 7/24
+    ['sample-app','web-shop'],          // 7/25
+    ['web-shop'],                       // 7/26
+    ['sample-app','web-shop','data-pipeline'], // 7/27
+    ['data-pipeline'],                  // 7/28
+    [],                                 // 7/29
+    ['sample-app','web-shop'],          // 7/30
+    ['sample-app','web-shop','その他'], // 7/31
+    ['sample-app','data-pipeline'],     // 8/1
+    ['sample-app','web-shop'],          // 8/2
+    [],                                 // 8/3
+    ['data-pipeline'],                  // 8/4
+    ['sample-app','web-shop'],          // 8/5
+    ['sample-app'],                     // 8/6
+  ];
+  let selectedDay = null;
+  const tt = document.getElementById('tt');
+
+  // 日付クリック → その日に活動したプロジェクトへ絞り込み
+  function selectDay(i) {
+    selectedDay = i;
+    const active = projByDay[i];
+    document.querySelectorAll('#projTable tr[data-proj]').forEach(r =>
+      r.style.display = active.includes(r.dataset.proj) ? '' : 'none');
+    document.getElementById('noProjRow').style.display = active.length ? 'none' : '';
+    document.getElementById('dateChipLabel').textContent = days[i];
+    document.getElementById('dateChip').classList.add('on');
+    renderCharts();
+  }
+  function clearDay() {
+    selectedDay = null;
+    document.querySelectorAll('#projTable tr[data-proj]').forEach(r => r.style.display = '');
+    document.getElementById('noProjRow').style.display = 'none';
+    document.getElementById('dateChip').classList.remove('on');
+    renderCharts();
+  }
+
+  // ---- 積み上げ + コスト折れ線のコンボチャート（Overview とプロジェクト画面で共用） ----
+  function comboChart(svgEl, seriesArr, costArr, opts = {}) {
+    function render() {
+      const W = svgEl.clientWidth || 1000;
+      const padL = 40, padR = 14;
+      const tokTop = 6,  tokH = 168;                 // 上段: トークン積み上げ
+      const cstTop = tokTop + tokH + 40, cstH = 74;  // 下段: コスト折れ線（x 軸共有）
+      const H = cstTop + cstH + 26;
+      svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svgEl.setAttribute('height', H);
+      const plotW = W - padL - padR;
+      const band = plotW / days.length;
+      const barW = Math.min(24, band * 0.55);
+      const totals = days.map((_, i) => seriesArr.reduce((a, s) => a + s.vals[i], 0));
+      const maxTok = Math.ceil(Math.max(...totals));
+      const maxCost = Math.ceil(Math.max(...costArr));
+      const tokStep = maxTok > 4 ? 2 : 1;
+      const sel = opts.selected ? opts.selected() : null;
+      let g = '';
+
+      // 選択日のハイライト（最背面）
+      if (sel !== null)
+        g += `<rect x="${padL + band*sel}" y="0" width="${band}" height="${H-20}" fill="var(--wash)" rx="6"/>`;
+
+      // --- 上段: トークン ---
+      for (let t = 0; t <= maxTok; t += tokStep) {
+        const y = tokTop + tokH - (t / maxTok) * tokH;
+        g += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+        g += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${t}M</text>`;
+      }
+      days.forEach((d, i) => {
+        const x = padL + band * i + (band - barW) / 2;
+        let acc = 0;
+        seriesArr.forEach((s, si) => {
+          const v = s.vals[i];
+          if (v <= 0) return;
+          const h = (v / maxTok) * tokH;
+          const y = tokTop + tokH - ((acc + v) / maxTok) * tokH;
+          const isTop = si === seriesArr.length - 1 || seriesArr.slice(si + 1).every(z => z.vals[i] === 0);
+          const r = isTop ? 4 : 0;
+          const gap = isTop ? 0 : 2; // 2px surface gap
+          g += `<rect data-day="${i}" x="${x}" y="${y}" width="${barW}" height="${Math.max(h-gap,0.5)}" fill="${s.color}" rx="${r}" ry="${r}"/>`;
+          if (r) g += `<rect data-day="${i}" x="${x}" y="${y + Math.max(h-gap,0.5) - 2}" width="${barW}" height="2" fill="${s.color}"/>`;
+          acc += v;
+        });
+      });
+      g += `<line x1="${padL}" y1="${tokTop+tokH}" x2="${W-padR}" y2="${tokTop+tokH}" stroke="var(--baseline)" stroke-width="1"/>`;
+
+      // --- 下段: コスト折れ線（単一系列 = 凡例なし。パネルラベルが系列名を兼ねる） ---
+      g += `<text x="${padL}" y="${cstTop-10}" font-size="11" font-weight="600" fill="var(--ink-2)">コスト（推定・$/日）</text>`;
+      for (let c = 0; c <= maxCost; c += 1) {
+        const y = cstTop + cstH - (c / maxCost) * cstH;
+        g += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+        g += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)" style="font-variant-numeric:tabular-nums">$${c}</text>`;
+      }
+      const pts = costArr.map((c, i) => [padL + band * i + band / 2, cstTop + cstH - (c / maxCost) * cstH]);
+      g += `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ')}"
+             fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+      pts.forEach((p, i) => {
+        g += `<circle data-day="${i}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/>`;
+      });
+      // 直接ラベルは選択的に: 最大値と最終日のみ
+      const maxI = costArr.indexOf(Math.max(...costArr));
+      g += `<text x="${pts[maxI][0]}" y="${pts[maxI][1]-9}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)" style="font-variant-numeric:tabular-nums">$${costArr[maxI].toFixed(2)}</text>`;
+      const li = costArr.length - 1;
+      g += `<text x="${pts[li][0]+8}" y="${pts[li][1]+3}" font-size="10.5" fill="var(--ink-2)" style="font-variant-numeric:tabular-nums">$${costArr[li].toFixed(2)}</text>`;
+      g += `<line x1="${padL}" y1="${cstTop+cstH}" x2="${W-padR}" y2="${cstTop+cstH}" stroke="var(--baseline)" stroke-width="1"/>`;
+
+      // --- 共有 x 軸ラベル（下段の下に 1 回だけ） ---
+      days.forEach((d, i) => {
+        if (i % 2 === 1)
+          g += `<text x="${padL + band*i + band/2}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${d}</text>`;
+      });
+
+      // --- ホバー / クリック用の透明帯（両パネルまたぎで 1 日単位） ---
+      days.forEach((_, i) => {
+        g += `<rect data-day="${i}" x="${padL + band*i}" y="0" width="${band}" height="${H-20}" fill="transparent"${opts.onClickDay ? ' style="cursor:pointer"' : ''}/>`;
+      });
+      svgEl.innerHTML = g;
+    }
+
+    svgEl.addEventListener('mousemove', e => {
+      const el = e.target.closest('[data-day]');
+      if (!el) { tt.style.display = 'none'; return; }
+      const i = +el.dataset.day;
+      const rows = seriesArr.map(s =>
+        `<div class="r"><span><i style="background:${s.color}"></i>${s.key}</span><span>${s.vals[i].toFixed(1)}M</span></div>`).join('');
+      const total = seriesArr.reduce((a, s) => a + s.vals[i], 0);
+      tt.innerHTML = `<div class="d">${days[i]}</div>${rows}
+        <div class="r" style="margin-top:4px; border-top:1px solid var(--grid); padding-top:4px"><span>合計</span><span>${total.toFixed(1)}M</span></div>
+        <div class="r"><span>コスト（推定）</span><span>$${costArr[i].toFixed(2)}</span></div>`;
+      tt.style.display = 'block';
+      tt.style.left = Math.min(e.clientX + 14, innerWidth - 200) + 'px';
+      tt.style.top = (e.clientY + 14) + 'px';
+    });
+    svgEl.addEventListener('mouseleave', () => tt.style.display = 'none');
+    if (opts.onClickDay) svgEl.addEventListener('click', e => {
+      const el = e.target.closest('[data-day]');
+      if (el) opts.onClickDay(+el.dataset.day);
+    });
+    return { render };
+  }
+
+  const ovChart = comboChart(document.getElementById('comboChart'), series, cost,
+    { selected: () => selectedDay, onClickDay: i => (selectedDay === i ? clearDay() : selectDay(i)) });
+
+  // プロジェクト画面: モデル別トークン（sample-app の合成データ。活動日は projByDay と整合）
+  const projSeries = [
+    { key: 'opus-4.6',   color: 'var(--s1)', vals: [0.6,0.9,0,1.1,0,0,0.8,1.4,1.2,0.7,0,0,1.6,0.9] },
+    { key: 'sonnet-4.5', color: 'var(--s2)', vals: [0.4,0.6,0,0.7,0,0,0.5,0.9,0.8,0.5,0,0,1.0,0.6] },
+    { key: 'haiku-4.5',  color: 'var(--s3)', vals: [0.1,0.2,0,0.2,0,0,0.2,0.3,0.2,0.1,0,0,0.3,0.2] },
+  ];
+  const projCost = [0.45,0.70,0,0.85,0,0,0.62,1.05,0.92,0.55,0,0,1.22,0.68]; // $/日（推定）
+
+  // その日に活動があったセッション（sample-app の合成データ。活動日は projSeries と整合）
+  const sessByDay = [
+    ['s4'],            // 7/24
+    ['s4'],            // 7/25
+    [],                // 7/26
+    ['s4'],            // 7/27
+    [], [],            // 7/28, 7/29
+    ['s2'],            // 7/30
+    ['s2'],            // 7/31
+    ['s3','s4'],       // 8/1
+    ['s3'],            // 8/2
+    [], [],            // 8/3, 8/4
+    ['s1','s2'],       // 8/5
+    ['s1'],            // 8/6
+  ];
+  let selectedDayPj = null;
+  function selectPjDay(i) {
+    selectedDayPj = i;
+    const active = sessByDay[i];
+    document.querySelectorAll('#sessTable tr[data-sess]').forEach(r =>
+      r.style.display = active.includes(r.dataset.sess) ? '' : 'none');
+    document.getElementById('moreSessRow').style.display = 'none';
+    document.getElementById('noSessRow').style.display = active.length ? 'none' : '';
+    document.getElementById('pjDateChipLabel').textContent = days[i];
+    document.getElementById('pjDateChip').classList.add('on');
+    renderCharts();
+  }
+  function clearPjDay() {
+    selectedDayPj = null;
+    document.querySelectorAll('#sessTable tr[data-sess]').forEach(r => r.style.display = '');
+    document.getElementById('moreSessRow').style.display = '';
+    document.getElementById('noSessRow').style.display = 'none';
+    document.getElementById('pjDateChip').classList.remove('on');
+    renderCharts();
+  }
+  const pjChart = comboChart(document.getElementById('projComboChart'), projSeries, projCost,
+    { selected: () => selectedDayPj, onClickDay: i => (selectedDayPj === i ? clearPjDay() : selectPjDay(i)) });
+
+  // ---- セッション画面: やりとり別コスト棒グラフ（ユーザー入力ごと・subagent 含む） ----
+  const turns = [
+    { label: '#1', time: '12:40', cost: 0.42, compacted: true },
+    { label: '#2', time: '12:58', cost: 0.28, compacted: true },
+    { label: '#3', time: '13:12', cost: 0.15, compacted: true },
+    { label: '#4', time: '13:30', cost: 0.31, compacted: true },
+    { label: '#5', time: '13:51', cost: 0.22, compacted: true },
+    { label: '#6', time: '14:02', cost: 0.02, id: 't6', preview: 'ログイン処理が肥大化してきたので…' },
+    { label: '#7', time: '14:05', cost: 0.59, id: 't7', preview: 'その方針で進めて。テストも書いて。' },
+    { label: '#8', time: '15:21', cost: 0.02, id: 't8', preview: 'PR まで作って。' },
+  ];
+  let selectedTurn = null;
+  function selectTurn(id, label) {
+    selectedTurn = id;
+    document.querySelectorAll('.chatbody [data-turn]').forEach(el =>
+      el.style.display = el.dataset.turn === id ? '' : 'none');
+    document.getElementById('turnChipLabel').textContent = label;
+    document.getElementById('turnChip').classList.add('on');
+    renderCharts();
+  }
+  function clearTurn() {
+    selectedTurn = null;
+    document.querySelectorAll('.chatbody [data-turn]').forEach(el => el.style.display = '');
+    document.getElementById('turnChip').classList.remove('on');
+    renderCharts();
+  }
+  const turnSvg = document.getElementById('turnChart');
+  function renderTurnChart() {
+    const W = turnSvg.clientWidth || 1000;
+    const padL = 40, padR = 14, padT = 8, padB = 30;
+    const H = 150, plotH = H - padT - padB;
+    turnSvg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const maxC = 0.6; // きりのよい上限（$0.2 刻み）
+    const band = (W - padL - padR) / turns.length;
+    const barW = Math.min(24, band * 0.5);
+    let g = '';
+    for (let c = 0; c <= maxC + 1e-9; c += 0.2) {
+      const y = padT + plotH - (c / maxC) * plotH;
+      g += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+      g += `<text x="${padL-6}" y="${y+3}" text-anchor="end" font-size="10" fill="var(--muted)" style="font-variant-numeric:tabular-nums">$${c.toFixed(1)}</text>`;
+    }
+    turns.forEach((t, i) => {
+      const x = padL + band * i + (band - barW) / 2;
+      const h = (t.cost / maxC) * plotH;
+      const y = padT + plotH - h;
+      if (t.id && selectedTurn === t.id)
+        g += `<rect x="${padL + band*i}" y="0" width="${band}" height="${H}" fill="var(--wash)" rx="6"/>`;
+      const fill = t.compacted ? 'var(--baseline)' : 'var(--s1)';
+      g += `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(h,1)}" fill="${fill}" rx="4" ry="4"/>`;
+      g += `<text x="${x + barW/2}" y="${H-16}" text-anchor="middle" font-size="10" fill="var(--muted)">${t.label}</text>`;
+      g += `<text x="${x + barW/2}" y="${H-5}" text-anchor="middle" font-size="9" fill="var(--muted)">${t.time}</text>`;
+    });
+    // ホバー / クリック用の透明帯（棒 + ラベルを含む 1 やりとり分の縦帯全体）
+    turns.forEach((t, i) => {
+      g += `<rect data-ti="${i}" x="${padL + band*i}" y="0" width="${band}" height="${H}" fill="transparent"
+             ${t.id ? 'style="cursor:pointer"' : ''}><title>${t.label} ${t.time} ${t.compacted ? '（compact 済み）' : t.preview} — $${t.cost.toFixed(2)} 推定</title></rect>`;
+    });
+    // 直接ラベルは最大値のみ
+    const maxI = turns.reduce((a, t, i) => t.cost > turns[a].cost ? i : a, 0);
+    const mx = padL + band * maxI + band / 2, my = padT + plotH - (turns[maxI].cost / maxC) * plotH;
+    g += `<text x="${mx}" y="${my-6}" text-anchor="middle" font-size="10.5" fill="var(--ink-2)" style="font-variant-numeric:tabular-nums">$${turns[maxI].cost.toFixed(2)}</text>`;
+    g += `<line x1="${padL}" y1="${padT+plotH}" x2="${W-padR}" y2="${padT+plotH}" stroke="var(--baseline)" stroke-width="1"/>`;
+    turnSvg.innerHTML = g;
+  }
+  turnSvg.addEventListener('click', e => {
+    const el = e.target.closest('[data-ti]');
+    if (!el) return;
+    const t = turns[+el.dataset.ti];
+    if (!t.id) return; // compact 済みは開けない
+    if (selectedTurn === t.id) clearTurn(); else selectTurn(t.id, t.label);
+  });
+
+  function renderCharts() { ovChart.render(); pjChart.render(); renderTurnChart(); }
+  renderCharts();
+  addEventListener('resize', renderCharts);
+
+  // ---- 横棒（単一系列 = 凡例なし・sequential hue） ----
+  function hbars(mount, rows, unit, clickable) {
+    const max = Math.max(...rows.map(r => r.v));
+    document.getElementById(mount).innerHTML = rows.map(r => `
+      <div class="hbar ${clickable ? 'rowlink' : ''}" title="${r.l}: ${r.v.toLocaleString()}${unit}"
+           ${clickable ? `onclick="filterProj('${r.l}')"` : ''}>
+        <span class="lb">${r.l}</span>
+        <span class="track"><i style="width:${(r.v/max*100).toFixed(1)}%"></i></span>
+        <span class="val">${unit === '$' ? '$' + r.v.toFixed(2) : r.v.toLocaleString()}</span>
+      </div>`).join('');
+  }
+  // ---- モデル別ドーナツ（トークン / コスト。スライス間は surface 色 2px のギャップ） ----
+  function donut(svgId, legendId, title, items, fmt) {
+    const svg = document.getElementById(svgId);
+    const total = items.reduce((a, x) => a + x.v, 0);
+    const cx = 56, cy = 56, r1 = 30, r2 = 52;
+    let a0 = -Math.PI / 2, g = '';
+    items.forEach(x => {
+      const a1 = a0 + (x.v / total) * Math.PI * 2;
+      const large = (a1 - a0) > Math.PI ? 1 : 0;
+      const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
+      g += `<path d="M ${p(r2, a0)} A ${r2} ${r2} 0 ${large} 1 ${p(r2, a1)} L ${p(r1, a1)} A ${r1} ${r1} 0 ${large} 0 ${p(r1, a0)} Z"
+             fill="${x.color}" stroke="var(--surface)" stroke-width="2"><title>${x.l}: ${fmt(x.v)}（${(x.v / total * 100).toFixed(0)}%）</title></path>`;
+      a0 = a1;
+    });
+    g += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">${fmt(total)}</text>`;
+    svg.innerHTML = g;
+    document.getElementById(legendId).innerHTML = `<div class="t">${title}</div>` + items.map(x =>
+      `<div class="r"><i style="background:${x.color}"></i>${x.l}<span class="pct">${fmt(x.v)} · ${(x.v / total * 100).toFixed(0)}%</span></div>`).join('');
+  }
+  const modelColors = { 'opus-4.6': 'var(--s1)', 'sonnet-4.5': 'var(--s2)', 'haiku-4.5': 'var(--s3)' };
+  donut('donutTok', 'donutTokLegend', 'トークン', [
+    { l: 'opus-4.6',   v: 32.5, color: modelColors['opus-4.6'] },
+    { l: 'sonnet-4.5', v: 12.8, color: modelColors['sonnet-4.5'] },
+    { l: 'haiku-4.5',  v: 2.9,  color: modelColors['haiku-4.5'] },
+  ], v => v.toFixed(1) + 'M');
+  donut('donutCost', 'donutCostLegend', 'コスト（推定）', [
+    { l: 'opus-4.6',   v: 9.12, color: modelColors['opus-4.6'] },
+    { l: 'sonnet-4.5', v: 2.86, color: modelColors['sonnet-4.5'] },
+    { l: 'haiku-4.5',  v: 0.49, color: modelColors['haiku-4.5'] },
+  ], v => '$' + v.toFixed(2));
+
+  hbars('toolBars', [
+    { l: 'Read', v: 2204 }, { l: 'Bash', v: 1842 }, { l: 'Edit', v: 920 }, { l: 'Grep', v: 715 },
+    { l: 'Write', v: 388 }, { l: 'Glob', v: 302 }, { l: 'mcp__github__*', v: 204 }, { l: 'その他', v: 410 },
+  ], '');
+  hbars('sessToolBars', [
+    { l: 'Read', v: 84 }, { l: 'Bash', v: 62 }, { l: 'Edit', v: 41 }, { l: 'Grep', v: 28 },
+    { l: 'mcp__github__*', v: 12 }, { l: 'その他', v: 31 },
+  ], '');
+</script>
+</body>
+</html>
