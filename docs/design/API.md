@@ -1,12 +1,8 @@
-# SPEC-API — HTTP API
+# SPEC-API — HTTP API（詳細設計書）
 
-担当 Issue: #5
+担当 Issue: #5。人間向けの基本仕様書は [docs/spec/API.md](../spec/API.md)。
 
-## ゴール
-
-インデックスを HTTP で提供する。`127.0.0.1` のみに bind し、認証は設けない（ローカルの個人ログを扱うため外部公開しない）。
-
-## 設計予定のエンドポイント
+## エンドポイント
 
 > **注意**: この節に `METHOD /api/...` 形式で書いた行は `npm run spec:check` の突き合わせ対象になる。実装（`server/routes/`）と対応が取れた状態でのみ記述する。Issue #5 着手時に下表を埋める。
 

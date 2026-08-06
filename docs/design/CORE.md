@@ -1,10 +1,6 @@
-# SPEC-CORE — JSONL パーサとインデクサ
+# SPEC-CORE — JSONL パーサとインデクサ（詳細設計書）
 
-担当 Issue: #2
-
-## ゴール
-
-`~/.claude/projects/**/*.jsonl`（1 ファイル最大 69MB・1 行最大 1.3MB）を全読み込みせずに解析し、セッション横断で集計可能な軽量インデックスを構築する。
+担当 Issue: #2。人間向けの基本仕様書は [docs/spec/CORE.md](../spec/CORE.md)。
 
 ## 設計上の制約
 

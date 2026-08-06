@@ -1,12 +1,12 @@
 /**
- * Spec ↔ ソースの乖離検査。仕様は docs/spec/SPEC-FLOW.md。
+ * Spec ↔ ソースの乖離検査。仕様は docs/spec/FLOW.md。
  *
  * 検出するもの:
  *   untested  — Spec に定義があるがテストから参照されていない ID
  *   orphan    — テストから参照されているが Spec に定義が無い ID
  *   duplicate — 2 箇所以上で定義された ID
  *   pending   — `- [ ]` のまま残る受け入れ基準（警告のみ）
- *   apiDrift  — SPEC-API.md と server/routes/ で片側にしか無いエンドポイント
+ *   apiDrift  — docs/design/API.md と server/routes/ で片側にしか無いエンドポイント
  */
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
@@ -90,7 +90,7 @@ export function extractReferences(content: string): string[] {
   return [...new Set(content.match(REFERENCE_ID) ?? [])];
 }
 
-/** SPEC-API.md の記述（表・コードブロックとも）から「METHOD /path」を抽出する。 */
+/** docs/design/API.md の記述（表・コードブロックとも）から「METHOD /path」を抽出する。 */
 export function extractApiEndpoints(markdown: string): string[] {
   const endpoints: string[] = [];
 
@@ -196,11 +196,18 @@ function formatList(label: string, items: string[]): string {
 }
 
 async function main(): Promise<number> {
-  const specs = await readTree(join(ROOT, 'docs/spec'), (n) => n.startsWith('SPEC-') && n.endsWith('.md'));
+  // 基本仕様書（docs/spec・人間向け）と詳細設計書（docs/design・AI 向け）の両方を走査する。
+  // 規約上チェックボックスは docs/design のみだが、docs/spec に書かれた場合も duplicate 検出で拾う。
+  // README.md は運用規約（記法例として実 ID のチェックボックス行を含む）なので定義走査から除外する。
+  const isSpecFile = (n: string): boolean => n.endsWith('.md') && !n.endsWith('README.md');
+  const specs = [
+    ...(await readTree(join(ROOT, 'docs/spec'), isSpecFile)),
+    ...(await readTree(join(ROOT, 'docs/design'), isSpecFile)),
+  ];
   const tests = await readTree(join(ROOT, 'tests'), (n) => /\.(test|spec)\.tsx?$/.test(n));
   const routes = await readTree(join(ROOT, 'server/routes'), (n) => n.endsWith('.ts'));
 
-  const apiSpec = specs.find((s) => s.file.endsWith('SPEC-API.md'));
+  const apiSpec = specs.find((s) => s.file === join('docs/design', 'API.md'));
   const report = analyze({
     specs,
     tests,
