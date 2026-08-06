@@ -53,7 +53,8 @@ Issue の作成（GitHub 反映）は `issue-start` スキル、以降は `issue
 6. **乖離チェック** — `npm run verify` → `npm run spec:check`
 7. **E2E テスト** — Playwright 導入済みの領域のみ（Issue #10 で導入。それまでは省略）
 8. **人間動作確認** — レンダリング・`npm run report` の数値・curl 出力など**成果物**で確認を受ける
-9. **commit** — 基準を `- [x]` に更新し、Spec とコードを同じ PR に含める
+9. **commit → PR** — 基準を `- [x]` に更新し、Spec とコードを同じ PR に含める。CI green まで確認して報告する
+10. **人間レビュー・マージ** — **PR のレビューとマージは人間が行う**（エージェントは `gh pr merge` を実行しない）
 
 テスト名の形式とテストデータの規約:
 
