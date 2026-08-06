@@ -69,11 +69,14 @@ origin  ssh://git@ssh.github.com:443/Takashi-Fujie/coding_agent-viewer.git
 
 ### SpecDD
 
-`docs/spec/SPEC-*.md` が**仕様の正本**。運用規約は `docs/spec/README.md`。
+仕様の正本は 2 ディレクトリ構成。運用規約は `docs/spec/README.md`。
 
-サイクル: **Spec に受け入れ基準を追記（`- [ ]`）→ テストを書く（Red）→ 実装（Green）→ verify → spec:check → Spec を `- [x]` に更新 → commit**
+- `docs/spec/`（**基本仕様書**・人間向け）: ゴール・できること・確認方法。要件合意ゲートのレビュー対象
+- `docs/design/`（**詳細設計書**・AI 向け）: データモデル・実装方針・**受け入れ基準チェックボックス**・実測値
 
-Spec とコードは**同じ PR** に含める（diff で仕様変更をレビューできる状態を保つ）。
+サイクル: **Issue 読み込み → 基本仕様書反映 → 人間確認（要件合意）→ 詳細設計書反映（`- [ ]`）→ TDD（Red → Green）→ verify → spec:check → E2E（導入済み領域のみ）→ 人間動作確認 → `- [x]` 更新 → commit**
+
+人間確認のゲートは 2 箇所（要件合意・動作確認）。**ゲートを跳ばして先へ進まない。** 仕様書・設計書とコードは**同じ PR** に含める（diff で仕様変更をレビューできる状態を保つ）。
 
 ### TestDD
 
@@ -96,7 +99,7 @@ npm run spec:check  # Spec ↔ ソースの乖離検査
 
 **両方通るまで commit しない。** `spec:check` でずれが出たら「Spec を直す」か「実装を直す」かをユーザーに確認する（勝手にどちらかへ寄せない）。
 
-`verify` は Issue の進行に合わせて段階的に構成を増やす（実体の無いコマンドを並べても検証にならないため）。現在の構成と追加予定は `docs/spec/SPEC-FLOW.md` の「段階導入の記録」を参照。
+`verify` は Issue の進行に合わせて段階的に構成を増やす（実体の無いコマンドを並べても検証にならないため）。現在の構成と追加予定は `docs/design/SPEC-FLOW.md` の「段階導入の記録」を参照。
 
 ### セッションの区切りは Issue の区切り（`/compact` より優先）
 
@@ -106,9 +109,10 @@ npm run spec:check  # Spec ↔ ソースの乖離検査
 
 | 引き継ぎたいもの | 置き場所 |
 |---|---|
-| 開発フロー・commit 前ゲート・`gh` 運用・remote 設定 | この `CLAUDE.md`（毎セッション自動ロード） |
-| 仕様の正本・受け入れ基準 | `docs/spec/SPEC-*.md` |
-| 規約の背景（`SPEC-SAMPLE-` 予約領域など） | `docs/spec/SPEC-FLOW.md` |
+| 開発フロー・commit 前ゲート・`gh` 運用・remote 設定 | この `AGENTS.md`（毎セッション自動ロード） |
+| 要件の正本（人間が確認するもの） | `docs/spec/SPEC-*.md`（基本仕様書） |
+| 受け入れ基準・データモデル・実測値 | `docs/design/SPEC-*.md`（詳細設計書） |
+| 規約の背景（`SPEC-SAMPLE-` 予約領域など） | `docs/design/SPEC-FLOW.md` |
 | 工程・残タスク | GitHub Issue |
 | 設計方針・調査で確定したデータ構造 | `README.md` / 各 Spec |
 

@@ -1,4 +1,4 @@
-# SPEC-DASH — ダッシュボード
+# SPEC-DASH — ダッシュボード（基本仕様書）
 
 担当 Issue: #7
 
@@ -6,16 +6,16 @@
 
 トークン・コスト・ツール・MCP の利用状況を俯瞰する 3 画面を提供する。
 
-## 画面
+## できること
 
-1. **Overview** — 期間フィルタ、総コスト、日次トークン推移（積み上げ: input / output / cache write / cache read）、モデル別・プロジェクト別内訳、キャッシュヒット率
-2. **Tools & MCP** — ツール別ランキング、`mcp__<server>__<tool>` から分解した MCP サーバ別内訳、失敗率（`toolUseResult.stderr` / `is_error`）、hook 発火履歴
-3. **Agents & Skills** — `~/.claude/agents/*.md` の定義一覧 × 実際の起動回数の突き合わせ（未使用エージェントの検出）、Skill 呼び出し履歴、subagent 実行トレース
+1. **Overview** — 期間フィルタ、総コスト、日次トークン推移、モデル別・プロジェクト別内訳、キャッシュヒット率
+2. **Tools & MCP** — ツール別ランキング、MCP サーバ別内訳、失敗率、hook 発火履歴
+3. **Agents & Skills** — エージェント定義一覧と実際の起動回数の突き合わせ（未使用エージェントの検出）、Skill 呼び出し履歴、subagent 実行トレース
 
-## 実装時の注意
+コストは常に「推定」と明示し、キャッシュ内訳を必ず表示する（SPEC-COST の表示上の約束）。
 
-チャートを書く前に `dataviz` skill を読み込む。
+## 人間の確認方法
 
-## 受け入れ基準
+画面のレンダリング結果と Playwright E2E（Issue #10 導入後）で確認する。詳細は Issue #7 着手時に具体化する。
 
-Issue #7 着手時に記入する。
+実装方針・受け入れ基準は [docs/design/SPEC-DASH.md](../design/SPEC-DASH.md)。
