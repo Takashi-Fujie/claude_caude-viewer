@@ -1,9 +1,9 @@
 {
-  "name": "claude-code-viewer",
+  "name": "coding-agent-viewer",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "~/.claude 配下のログを可視化するローカル Web アプリ",
+  "description": "コーディングエージェントの活動ログを可視化するローカル Web アプリ",
   "engines": {
     "node": ">=22"
   },
