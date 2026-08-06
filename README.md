@@ -1,6 +1,6 @@
-# claude-code-viewer
+# coding_agent-viewer
 
-`~/.claude/` 配下に蓄積された Claude Code の活動ログを可視化するローカル Web アプリ。
+コーディングエージェントの活動ログを可視化するローカル Web アプリ。まず `~/.claude/` 配下の Claude Code ログを対象に実装し、完了後に Codex CLI のログ対応を追加する。
 
 - **チャット閲覧・検索** — セッションの会話を整形表示し、横断検索する
 - **トークン / コスト統計** — モデル別・プロジェクト別・日次の消費量と推定コスト、キャッシュ効率
@@ -28,7 +28,15 @@ npm run spec:check   # Spec ↔ ソースの乖離検査
 npm run test:watch   # テスト watch
 ```
 
-開発フローと設計上の判断は [CLAUDE.md](./CLAUDE.md)、仕様は [docs/spec/](./docs/spec/) を参照。
+開発フローと設計上の判断は [AGENTS.md](./AGENTS.md)、仕様は [docs/spec/](./docs/spec/) を参照。
+
+## エージェント設定
+
+複数のコーディングエージェントで併用できるよう [AGENTS.md 標準](https://agents.md)と [Agent Skills 標準](https://agentskills.io)に合わせている。
+
+- `AGENTS.md` が正本。`CLAUDE.md` はシンボリックリンク（Claude Code 用）
+- スキルの正本は `.claude/skills/<name>/SKILL.md`。`.codex/skills` はそこへのシンボリックリンク（Codex CLI 用）
+- スキル: `issue-start`（Issue 作成まで）/ `issue-cycle`（ブランチ作成〜PR〜クローズ）/ `project-review`（このリポジトリ固有のレビュー観点）
 
 ## 設計方針
 
@@ -36,6 +44,7 @@ npm run test:watch   # テスト watch
 - インデックスは軽量メタのみ保持し、全文は表示時に offset で seek して読む
 - 追記前提の増分更新（差分バイトのみ再解析）
 - サーバは `127.0.0.1` のみに bind。認証なし・外部公開しない
+- ログソースと viewer の間に正規化 DTO の中間層を置き、Claude 固有の解釈はパーサ側に閉じ込める（将来の Codex CLI 対応で viewer 側を変えないため）
 
 ## コストについて
 
