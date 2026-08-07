@@ -8,6 +8,7 @@
 export type Route =
   | { view: 'overview' }
   | { view: 'tools' }
+  | { view: 'config' }
   | { view: 'sessions'; projectId: string }
   | { view: 'session'; projectId: string; sessionId: string };
 
@@ -18,6 +19,7 @@ export function parseRoute(hash: string): Route {
     .filter((p) => p.length > 0);
 
   if (parts[0] === 'tools') return { view: 'tools' };
+  if (parts[0] === 'config') return { view: 'config' };
 
   if (parts[0] === 'projects' && parts[1]) {
     const projectId = decodeURIComponent(parts[1]);
@@ -36,6 +38,8 @@ export function routeHash(route: Route): string {
       return '#/';
     case 'tools':
       return '#/tools';
+    case 'config':
+      return '#/config';
     case 'sessions':
       return `#/projects/${encodeURIComponent(route.projectId)}`;
     case 'session':

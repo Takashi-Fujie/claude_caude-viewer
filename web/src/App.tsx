@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from 'react';
 import { parseRoute, routeHash } from './router';
+import { ConfigView } from './views/ConfigView';
 import { OverviewView } from './views/OverviewView';
 import { ToolsView } from './views/ToolsView';
 import { SessionListView } from './views/SessionListView';
@@ -19,7 +20,8 @@ export function App() {
   }, []);
 
   // ドリルダウン画面（プロジェクト / セッション）では Overview 側をアクティブ表示にする
-  const activeNav = route.view === 'tools' ? 'tools' : 'overview';
+  const activeNav =
+    route.view === 'tools' ? 'tools' : route.view === 'config' ? 'config' : 'overview';
 
   return (
     <div className="app">
@@ -37,6 +39,10 @@ export function App() {
         <a href={routeHash({ view: 'tools' })} className={activeNav === 'tools' ? 'active' : ''}>
           Tools &amp; Agents
         </a>
+        <div className="group">環境</div>
+        <a href={routeHash({ view: 'config' })} className={activeNav === 'config' ? 'active' : ''}>
+          設定
+        </a>
         <div className="foot">
           127.0.0.1 のみ
           <br />
@@ -46,6 +52,7 @@ export function App() {
       <main className="appmain">
         {route.view === 'overview' && <OverviewView />}
         {route.view === 'tools' && <ToolsView />}
+        {route.view === 'config' && <ConfigView />}
         {route.view === 'sessions' && <SessionListView projectId={route.projectId} />}
         {route.view === 'session' && (
           <SessionView

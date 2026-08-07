@@ -19,7 +19,7 @@
 | `GET /api/stats/agents` | subagent / skill 別の起動実績と最終使用日時 | `from` `to` `tzOffset` `project` |
 | `GET /api/stats/hooks` | hook 発火履歴（新しい順・SPEC-DASH-025） | `from` `to` `tzOffset` `project` `limit` |
 | `GET /api/live` | セッション差分の SSE 配信（詳細は [LIVE.md](LIVE.md)） | `session` `have` |
-| `GET /api/config` | `~/.claude/` の agents / skills / settings 一覧 | — |
+| `GET /api/config` | `~/.claude/` の agents / skills / plugins / settings / history（詳細は docs/design/CONFIG.md） | — |
 | `GET /api/pricing` | 価格表（コストが「推定」であることの明示付き） | — |
 
 ## データモデル・実装方針
@@ -111,7 +111,7 @@ server/
 
 ### 設定・価格表
 
-- [x] `SPEC-API-060` GET /api/config は agents / skills / settings の一覧を返し、対象ディレクトリが無い場合は空一覧を返す
+- [x] `SPEC-API-060` GET /api/config は agents / skills / plugins / settings / history を返し、対象が無い場合は空一覧（settings は null）を返す。plugins は installed_plugins.json 由来（Issue #9 で「plugins/ 直下のディレクトリ名の羅列」から改訂）
 - [x] `SPEC-API-061` GET /api/pricing は価格表と、コストが推定であることを示す source を返す
 
 ## 実測値（2026-08-06・Issue #5 完了時）

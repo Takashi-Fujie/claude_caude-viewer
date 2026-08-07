@@ -101,6 +101,17 @@ beforeAll(async () => {
     JSON.stringify({ permissions: { allow: ['Bash(echo:*)'] } }),
     'utf8',
   );
+  await mkdir(join(claudeDir, 'plugins'), { recursive: true });
+  await writeFile(
+    join(claudeDir, 'plugins', 'installed_plugins.json'),
+    JSON.stringify({ version: 2, plugins: { 'sample-plugin@sample-marketplace': [{}] } }),
+    'utf8',
+  );
+  await writeFile(
+    join(claudeDir, 'history.jsonl'),
+    JSON.stringify({ display: '合成の依頼文', project: '/home/dev/project-a', timestamp: 1767225600000 }) + '\n',
+    'utf8',
+  );
 
   app = createApp({ logDir, cacheDir, claudeDir });
 });
@@ -371,18 +382,25 @@ describe('GET /api/stats/*', () => {
 });
 
 describe('GET /api/config, /api/pricing', () => {
-  it('SPEC-API-060: config は agents / skills / settings を返し、ディレクトリが無ければ空一覧', async () => {
+  it('SPEC-API-060: config は agents / skills / plugins / settings / history を返し、対象が無ければ空一覧', async () => {
     const res = await request(app).get('/api/config');
     expect(res.status).toBe(200);
     expect(res.body.agents.map((a: { name: string }) => a.name)).toContain('sample-reviewer');
     expect(res.body.skills.map((s: { name: string }) => s.name)).toContain('sample-skill');
+    // plugins は installed_plugins.json 由来（plugins/ 直下のディレクトリ名の羅列ではない）
+    expect(res.body.plugins).toEqual([{ name: 'sample-plugin', marketplace: 'sample-marketplace' }]);
     expect(res.body.settings.permissions.allow).toContain('Bash(echo:*)');
+    expect(res.body.history).toEqual([
+      { project: '/home/dev/project-a', count: 1, lastTimestamp: '2026-01-01T00:00:00.000Z' },
+    ]);
 
     const emptyApp = createApp({ logDir, cacheDir, claudeDir: join(root, 'no-such-claude') });
     const empty = await request(emptyApp).get('/api/config');
     expect(empty.status).toBe(200);
     expect(empty.body.agents).toEqual([]);
     expect(empty.body.skills).toEqual([]);
+    expect(empty.body.plugins).toEqual([]);
+    expect(empty.body.history).toEqual([]);
     expect(empty.body.settings).toBeNull();
   });
 

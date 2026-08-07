@@ -125,8 +125,40 @@ export interface HookStatsResponse {
   truncated: boolean;
 }
 
-/** GET /api/config のレスポンス（画面が使う分のみ）。 */
+/** エージェント・スキル定義（GET /api/config。SPEC-CONFIG-001〜003）。 */
+export interface AgentDefinition {
+  name: string;
+  path: string;
+  description: string | null;
+  tools: string[] | null;
+  model: string | null;
+  parseError: boolean;
+}
+
+export interface SkillDefinition {
+  name: string;
+  path: string;
+  description: string | null;
+  parseError: boolean;
+}
+
+export interface PluginInfo {
+  name: string;
+  marketplace: string;
+}
+
+export interface HistoryProject {
+  project: string;
+  count: number;
+  lastTimestamp: string | null;
+}
+
+/** GET /api/config のレスポンス（SPEC-API-060）。settings は表示時に選別する。 */
 export interface ConfigResponse {
-  agents: { name: string; description?: string }[];
-  skills: { name: string; description?: string }[];
+  claudeDir: string;
+  agents: AgentDefinition[];
+  skills: SkillDefinition[];
+  plugins: PluginInfo[];
+  settings: unknown;
+  history: HistoryProject[];
 }
