@@ -2,7 +2,7 @@
 
 `scripts/spec-check.ts` の実装詳細と受け入れ基準。
 
-> **SPEC-FLOW に基本仕様書は無い。** 開発フローは AGENTS.md が基本仕様書相当（人間が合意する正本）、`issue-create` / `dev-cycle` スキルが実装に当たるため。このファイルは spec-check というツールの受け入れ基準台帳としてのみ存在する。
+> **SPEC-FLOW に基本仕様書は無い。** 開発フローは AGENTS.md が基本仕様書相当（オーナーが合意する正本）、`issue-create` / `dev-cycle` スキルが実装に当たるため。このファイルは spec-check というツールの受け入れ基準台帳としてのみ存在する。
 
 ## 用語
 
