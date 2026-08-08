@@ -1,0 +1,76 @@
+/**
+ * SPEC-CHAT の E2E（SPEC-CHAT-070〜074）。仕様は docs/design/CHAT.md。
+ */
+import { expect, test } from '@playwright/test';
+import {
+  E2E_PROJECT_ID,
+  E2E_PROJECT_PATH,
+  SESSION_MAIN,
+  SESSION_SAMPLE,
+} from './support/env.js';
+
+function sessionUrl(sessionId: string): string {
+  return `/#/projects/${E2E_PROJECT_ID}/sessions/${sessionId}`;
+}
+
+test('SPEC-CHAT-070: Overview → プロジェクト → セッション分析へドリルダウンでき、パンくずで戻れる', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByTestId('project-table').getByText(E2E_PROJECT_PATH).click();
+
+  // プロジェクト画面: セッション一覧から E2E 主対象セッションへ
+  await expect(page.locator('.crumbs')).toContainText('Overview');
+  await page.getByTestId('session-table').getByText(SESSION_MAIN).first().click();
+  await expect(page).toHaveURL(new RegExp(`#/projects/.+/sessions/${SESSION_MAIN}`));
+
+  // パンくずで プロジェクト → Overview と戻る
+  await page.locator('.crumbs').getByText(E2E_PROJECT_PATH).click();
+  await expect(page.getByTestId('session-table')).toBeVisible();
+  await page.locator('.crumbs').getByText('← Overview').click();
+  await expect(page.getByTestId('project-table')).toBeVisible();
+});
+
+test('SPEC-CHAT-071: セッションヘッダにモデル・総トークン・推定コスト・破損スキップ行数が表示される', async ({
+  page,
+}) => {
+  // 破損行（壊れた JSON）はサンプルセッションに含まれる
+  await page.goto(sessionUrl(SESSION_SAMPLE));
+  const head = page.locator('.chathead');
+  await expect(head).toContainText('claude-sonnet-5');
+  await expect(head).toContainText('合計');
+  await expect(head).toContainText('推定');
+  await expect(head).toContainText('破損');
+  await expect(head).toContainText('行スキップ');
+});
+
+test('SPEC-CHAT-072: ツール呼び出しは折りたたまれ、開くと入出力が読め、失敗（is_error）が明示される', async ({
+  page,
+}) => {
+  await page.goto(sessionUrl(SESSION_MAIN));
+  const tool = page.locator('details.tool', { hasText: 'Bash' }).first();
+  await expect(tool).toContainText('失敗');
+  // 折りたたみ状態では結果本文は見えない
+  await expect(tool.locator('pre.result')).not.toBeVisible();
+  await tool.locator('summary').click();
+  await expect(tool.locator('pre.result')).toContainText('合成のビルド失敗ログ');
+});
+
+test('SPEC-CHAT-073: やりとり別コスト棒グラフの帯クリックで会話が絞り込まれ、解除できる', async ({
+  page,
+}) => {
+  await page.goto(sessionUrl(SESSION_MAIN));
+  await expect(page.getByText('E2E 用の依頼文。', { exact: false })).toBeVisible();
+
+  await page.getByTestId('turn-band-0').click();
+  await expect(page.getByText('のみ表示')).toBeVisible();
+
+  await page.getByRole('button', { name: '✕' }).click();
+  await expect(page.getByText('のみ表示')).not.toBeVisible();
+});
+
+test('SPEC-CHAT-074: 巨大行（50KB 超）を含むセッションの分析画面が表示される', async ({ page }) => {
+  await page.goto(sessionUrl(SESSION_SAMPLE));
+  await expect(page.getByText('サンプルの依頼文。')).toBeVisible();
+  await expect(page.locator('.chathead')).toContainText('合計');
+});

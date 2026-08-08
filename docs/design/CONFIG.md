@@ -128,3 +128,9 @@ YAML ライブラリは追加しない。対象ファイルで実際に使われ
 - [x] `SPEC-CONFIG-031` エージェント・スキル一覧に起動回数・最終起動日時・未使用バッジが表示される
 - [x] `SPEC-CONFIG-032` settings の hooks / permissions / enabledPlugins / statusLine が表示される
 - [x] `SPEC-CONFIG-033` プロンプト履歴がプロジェクト別に件数・最終利用日時付きで表示される
+
+### E2E（Issue #10・tests/e2e）
+
+- [x] `SPEC-CONFIG-040` 設定・定義画面にエージェント・スキル・プラグインの一覧が合成 claudeDir の内容で描画される
+- [x] `SPEC-CONFIG-041` frontmatter が壊れた定義が「パース不能」として一覧に残り、画面全体は描画される
+- [x] `SPEC-CONFIG-042` 起動実績 0 件の定義に未使用バッジが表示される

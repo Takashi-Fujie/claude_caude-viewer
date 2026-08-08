@@ -20,13 +20,35 @@
 npm install
 ```
 
+## 使い方
+
+```bash
+npm run build:web    # フロントエンドをビルド（web/dist）
+npm run serve        # http://127.0.0.1:4517 で起動（PORT 環境変数で変更可）
+```
+
+ブラウザで `http://127.0.0.1:4517` を開く。画面は 5 つ:
+
+| 画面 | 内容 |
+|---|---|
+| Overview | 期間別の総コスト・総トークン・日次チャート・プロジェクト一覧・全文検索 |
+| プロジェクト | 日次モデル別チャートとセッション一覧（Overview からドリルダウン） |
+| セッション分析 | 会話の整形表示・やりとり別コスト・ツール/MCP 利用状況・ライブ更新 |
+| Tools & Agents | ツール別ランキング・失敗率・MCP 内訳・hook 履歴・未使用エージェント検出 |
+| 設定・定義 | agents / skills / plugins / settings / プロンプト履歴の可視化 |
+
+フロントエンドを触る開発中は `npm run dev:web`（Vite dev server・API は 4517 へプロキシ）。
+
 ## 開発
 
 ```bash
-npm run verify       # commit 前ゲート（typecheck → lint → test:unit）
+npm run verify       # commit 前ゲート（typecheck → lint → test:unit → test:e2e → report）
 npm run spec:check   # Spec ↔ ソースの乖離検査
-npm run test:watch   # テスト watch
+npm run test:watch   # ユニットテスト watch
+npm run test:e2e     # Playwright E2E（合成フィクスチャのみ。実ログには触れない）
 ```
+
+E2E は `tests/e2e/support/seed.ts` が `.cache/e2e/` に合成ログ・合成 `~/.claude` 相当を敷いて検証する。初回は `npx playwright install chromium` が必要。
 
 開発フローと設計上の判断は [AGENTS.md](./AGENTS.md)、仕様は [docs/spec/](./docs/spec/) を参照。
 

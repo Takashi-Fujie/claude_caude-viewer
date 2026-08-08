@@ -106,6 +106,22 @@ export interface OverviewResponse {
   projects: ProjectListItem[];
 }
 
+/** GET /api/search のヒット 1 件（SPEC-API-040・SPEC-DASH-060）。 */
+export interface SearchHit {
+  projectId: string;
+  sessionId: string;
+  offset: number;
+  preview: string;
+}
+
+/** GET /api/search のレスポンス。 */
+export interface SearchResponse {
+  q: string;
+  limit: number;
+  truncated: boolean;
+  hits: SearchHit[];
+}
+
 /** GET /api/stats/tools のレスポンス（SPEC-DASH-020〜023）。 */
 export interface ToolStatsResponse {
   tools: ToolStat[];

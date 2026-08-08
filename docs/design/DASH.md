@@ -74,6 +74,13 @@ tool_result（user レコード）には `tool_use_id` しか無い。ツール�
 - `web/src/views/OverviewView.tsx` / `ToolsView.tsx` — 各画面
 - チャート実装前に **`dataviz` skill を読み込む**。色は CSS 変数（モックの `--s1`〜`--s4`）、文字色はデータ色を着せない（text-never-wears-data-color）
 
+### 全文検索 UI（Issue #10 で追加）
+
+- Overview 上部に検索ボックスを置く。Enter で `GET /api/search?q=` を呼び、ヒット一覧（プロジェクト・セッション・preview 抜粋）を Overview 内のパネルに表示する
+- ヒット行クリックで `#/projects/:projectId/sessions/:sessionId` へ遷移する
+- 0 件は「該当なし」、`truncated: true` のときは打ち切りの明示を出す。✕ で検索状態を解除する
+- 検索状態はローカル state（URL に載せない。日付絞り込みと同じ扱い）
+
 ### 絞り込みの状態
 
 日付クリック絞り込み（選択帯ハイライト・チップ・✕ / 再クリック解除・「該当なし」行）は各画面のローカル state で持つ。URL には載せない（リロードで解除されてよい）。
@@ -132,6 +139,19 @@ tool_result（user レコード）には `tool_use_id` しか無い。ツール�
 - [x] `SPEC-DASH-050` Tools & Agents はツール別ランキング・失敗率・プロジェクト別ツール利用・MCP サーバ別内訳・hook 発火履歴を表示する
 - [x] `SPEC-DASH-051` エージェント定義（/api/config）と起動実績（/api/stats/agents）を突き合わせ、起動 0 の定義に未使用バッジを表示する
 - [x] `SPEC-DASH-052` Skill 呼び出し履歴は呼出回数と最終使用日時を表示する
+
+### 画面 — 全文検索（Issue #10）
+
+- [x] `SPEC-DASH-060` Overview の検索ボックスで語を送ると /api/search のヒット一覧（プロジェクト・セッション・抜粋）を表示する
+- [x] `SPEC-DASH-061` 検索ヒットのクリックでそのセッションのセッション分析画面へ遷移する
+- [x] `SPEC-DASH-062` ヒット 0 件のとき「該当なし」を表示し、truncated のとき打ち切りを明示する
+
+### E2E（Issue #10・tests/e2e）
+
+- [x] `SPEC-DASH-070` Overview に総コスト（推定）・総トークン・プロジェクト一覧が合成ログの内容で描画される
+- [x] `SPEC-DASH-071` Overview の検索から合成ログ内の語でヒットし、クリックでセッション分析画面へ遷移できる
+- [x] `SPEC-DASH-072` Tools & Agents にツール別ランキングが描画される
+- [x] `SPEC-DASH-073` 未知モデルを含む合成ログで Overview の警告バナーに件数が表示される
 
 ## 実測値（2026-08-06・Issue #7 実装時）
 
