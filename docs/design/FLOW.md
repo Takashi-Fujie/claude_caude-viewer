@@ -50,5 +50,17 @@
 | 追加時期 | verify の構成 |
 |---|---|
 | Issue #1 | `typecheck` → `lint` → `test:unit` |
-| Issue #4（現在） | 上記 + `report`（実ログに対する実測値照合。CI では実ログが無いため実行しない） |
-| Issue #10 | 上記 + `test:e2e`（Playwright） |
+| Issue #4 | 上記 + `report`（実ログに対する実測値照合。CI では実ログが無いため実行しない） |
+| Issue #10（現在・最終形） | 上記 + `test:e2e`（Playwright） |
+
+### E2E 基盤（Issue #10）
+
+- テストは `tests/e2e/*.spec.ts`（Playwright）。テスト名は unit と同じ `SPEC-ID: 説明` 形式で、spec-check の参照走査対象に含まれる（走査 glob は `.test|.spec` 両対応済み）
+- サーバは実 `~/.claude` に触れない。`tests/e2e/` の起動スクリプトが一時ディレクトリへ合成フィクスチャ（logDir + claudeDir 相当）を敷き、`createApp` に注入して起動する
+- 事前に `build:web` した `web/dist` を静的配信し、実運用と同じ経路（Express 配信）で検証する。ポートは 4517 と衝突しない値を使う
+- CI（ubuntu）には Playwright のブラウザインストール手順を追加する
+
+### 実測値（2026-08-08・Issue #10 実装時）
+
+- E2E 15 テスト（CHAT 5 / DASH 4 / LIVE 3 / CONFIG 3）が直列（workers: 1）で約 8.7 秒（build:web・サーバ起動を除く）
+- `npm run verify`（typecheck → lint → unit 215 → E2E 15 → report）が一括で通過。report は実ログ 20 ファイル / 99.6 MB / 10,933 レコードに対し照合 OK

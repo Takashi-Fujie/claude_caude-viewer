@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, presetQuery } from '../api';
 import { ComboChart } from '../components/ComboChart';
 import { Donut } from '../components/Donut';
+import { SearchPanel } from '../components/SearchPanel';
 import { assignModelColors } from '../lib/colors';
 import { PRESETS } from '../lib/dates';
 import type { PresetKey } from '../lib/dates';
@@ -161,6 +162,8 @@ export function OverviewView() {
             </span>
           )}
         </div>
+
+        <SearchPanel />
 
         {unknownModels.length > 0 && (
           <div className="warnbanner" data-testid="unknown-banner">

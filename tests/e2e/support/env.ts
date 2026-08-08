@@ -1,0 +1,37 @@
+/**
+ * E2E の共有定数。仕様は docs/design/FLOW.md（E2E 基盤）。
+ *
+ * サーバ起動スクリプト（server.ts・webServer プロセス）とテスト（*.spec.ts・
+ * Playwright ワーカープロセス）は別プロセスなので、フィクスチャの置き場所は
+ * 乱数や一時ディレクトリではなく決定的なパス（.cache/e2e・gitignore 済み）で共有する。
+ */
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const E2E_PORT = 4519;
+export const E2E_BASE_URL = `http://127.0.0.1:${String(E2E_PORT)}`;
+
+const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url));
+
+export const E2E_ROOT = join(REPO_ROOT, '.cache', 'e2e');
+export const E2E_LOG_DIR = join(E2E_ROOT, 'projects');
+export const E2E_CACHE_DIR = join(E2E_ROOT, 'cache');
+export const E2E_CLAUDE_DIR = join(E2E_ROOT, 'claude');
+
+/** 合成プロジェクト（cwd = /home/dev/sample-project の変換形）。 */
+export const E2E_PROJECT_ID = '-home-dev-sample-project';
+export const E2E_PROJECT_PATH = '/home/dev/sample-project';
+
+/** tests/fixtures/session-sample.jsonl のコピー（巨大行・壊れ行・未知モデル入り）。 */
+export const SESSION_SAMPLE = 's0000000-0000-4000-8000-000000000001';
+/** E2E 主対象セッション（ツール失敗・検索トークン入り）。 */
+export const SESSION_MAIN = 's0000000-0000-4000-8000-0000000000e1';
+/** ライブ更新テストが追記する専用セッション。 */
+export const SESSION_LIVE = 's0000000-0000-4000-8000-0000000000e2';
+
+export function sessionFilePath(sessionId: string): string {
+  return join(E2E_LOG_DIR, E2E_PROJECT_ID, `${sessionId}.jsonl`);
+}
+
+/** 全文検索 E2E が探す一意な合成トークン。 */
+export const SEARCH_TOKEN = 'E2E検索専用トークンXYZQ';

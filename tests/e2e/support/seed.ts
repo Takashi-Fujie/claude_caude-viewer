@@ -1,0 +1,233 @@
+/**
+ * E2E フィクスチャの生成。仕様は docs/design/FLOW.md（E2E 基盤）。
+ *
+ * すべて合成データ（実ログのパス・プロンプト本文・permissions 実値を含まない）。
+ * logDir には tests/fixtures/session-sample.jsonl（巨大行・壊れ行・未知モデル・
+ * `<synthetic>` 行入り）のコピーと、E2E 用に組んだ 2 セッションを置く。
+ * claudeDir には設定・定義画面（SPEC-CONFIG）用の最小レイアウトを敷く。
+ */
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  E2E_CLAUDE_DIR,
+  E2E_LOG_DIR,
+  E2E_PROJECT_ID,
+  E2E_PROJECT_PATH,
+  E2E_ROOT,
+  SEARCH_TOKEN,
+  SESSION_LIVE,
+  SESSION_MAIN,
+  SESSION_SAMPLE,
+  sessionFilePath,
+} from './env.js';
+
+const SAMPLE_FIXTURE = fileURLToPath(
+  new URL('../../fixtures/session-sample.jsonl', import.meta.url),
+);
+
+/**
+ * Overview の既定プリセット（7日）に掛かるよう、E2E セッションのタイムスタンプは
+ * 実行時刻基準にする（固定日付だと期間フィルタで集計から消える）。
+ */
+function iso(minutesAgo: number): string {
+  return new Date(Date.now() - minutesAgo * 60_000).toISOString();
+}
+
+interface LineOver {
+  uuid: string;
+  parentUuid: string | null;
+  timestamp: string;
+  sessionId: string;
+}
+
+function userLine(over: LineOver & { content: unknown }): Record<string, unknown> {
+  return {
+    type: 'user',
+    isSidechain: false,
+    userType: 'external',
+    cwd: E2E_PROJECT_PATH,
+    version: '9.9.9',
+    gitBranch: 'main',
+    message: { role: 'user', content: over.content },
+    ...over,
+  };
+}
+
+function assistantLine(
+  over: LineOver & { model?: string; content: unknown[] },
+): Record<string, unknown> {
+  const { model, content, ...rest } = over;
+  return {
+    type: 'assistant',
+    isSidechain: false,
+    userType: 'external',
+    cwd: E2E_PROJECT_PATH,
+    version: '9.9.9',
+    gitBranch: 'main',
+    requestId: `req_e2e_${over.uuid}`,
+    message: {
+      id: `msg_e2e_${over.uuid}`,
+      role: 'assistant',
+      model: model ?? 'claude-sonnet-5',
+      content,
+      usage: {
+        input_tokens: 100,
+        output_tokens: 200,
+        cache_read_input_tokens: 300,
+        cache_creation_input_tokens: 400,
+        cache_creation: { ephemeral_5m_input_tokens: 250, ephemeral_1h_input_tokens: 150 },
+      },
+    },
+    ...rest,
+  };
+}
+
+/** 分単位のオフセット（日次チャートに複数日の棒を立てるため日をまたいで分散させる）。 */
+const TWO_DAYS = 2 * 24 * 60;
+const ONE_DAY = 24 * 60;
+
+/** E2E 主対象セッション: 検索トークン・ツール成功/失敗・複数モデル。2〜1 日前に配置。 */
+function mainSessionLines(): Record<string, unknown>[] {
+  const sid = SESSION_MAIN;
+  return [
+    userLine({
+      uuid: 'u-e1-1',
+      parentUuid: null,
+      timestamp: iso(TWO_DAYS),
+      sessionId: sid,
+      content: `E2E 用の依頼文。${SEARCH_TOKEN}`,
+    }),
+    assistantLine({
+      uuid: 'a-e1-1',
+      parentUuid: 'u-e1-1',
+      timestamp: iso(TWO_DAYS - 1),
+      sessionId: sid,
+      content: [
+        { type: 'text', text: 'ビルドを実行します。' },
+        { type: 'tool_use', id: 'toolu_e2e_0001', name: 'Bash', input: { command: 'npm run build' } },
+      ],
+    }),
+    userLine({
+      uuid: 'u-e1-2',
+      parentUuid: 'a-e1-1',
+      timestamp: iso(TWO_DAYS - 2),
+      sessionId: sid,
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: 'toolu_e2e_0001',
+          is_error: true,
+          content: 'exit 1: 合成のビルド失敗ログ',
+        },
+      ],
+    }),
+    assistantLine({
+      uuid: 'a-e1-2',
+      parentUuid: 'u-e1-2',
+      timestamp: iso(ONE_DAY),
+      sessionId: sid,
+      model: 'claude-opus-5',
+      content: [{ type: 'text', text: 'ビルドが失敗したため原因を調査します。' }],
+    }),
+    // 未知モデル（期間内）: Overview の警告バナー（SPEC-DASH-073）の対象
+    assistantLine({
+      uuid: 'a-e1-3',
+      parentUuid: 'a-e1-2',
+      timestamp: iso(ONE_DAY - 1),
+      sessionId: sid,
+      model: 'claude-imaginary-9',
+      content: [{ type: 'text', text: '価格表に無い合成モデルの応答。' }],
+    }),
+  ];
+}
+
+/** ライブ更新テスト用の最小セッション（テストが後から追記する）。 */
+function liveSessionLines(): Record<string, unknown>[] {
+  const sid = SESSION_LIVE;
+  return [
+    userLine({
+      uuid: 'u-e2-1',
+      parentUuid: null,
+      timestamp: iso(30),
+      sessionId: sid,
+      content: 'ライブ更新の対象セッション。',
+    }),
+    assistantLine({
+      uuid: 'a-e2-1',
+      parentUuid: 'u-e2-1',
+      timestamp: iso(29),
+      sessionId: sid,
+      content: [{ type: 'text', text: '初期状態の応答。' }],
+    }),
+  ];
+}
+
+/** ライブ更新テストが追記する行（tests 側からも import する）。 */
+export function liveAppendLine(n: number): Record<string, unknown> {
+  return assistantLine({
+    uuid: `a-e2-app-${String(n)}`,
+    parentUuid: 'a-e2-1',
+    timestamp: new Date().toISOString(),
+    sessionId: SESSION_LIVE,
+    content: [{ type: 'text', text: `ライブ追記メッセージ ${String(n)}` }],
+  });
+}
+
+function toJsonl(lines: Record<string, unknown>[]): string {
+  return lines.map((l) => JSON.stringify(l)).join('\n') + '\n';
+}
+
+/** 合成 ~/.claude 相当（設定・定義画面用）。 */
+async function seedClaudeDir(): Promise<void> {
+  await mkdir(join(E2E_CLAUDE_DIR, 'agents'), { recursive: true });
+  await mkdir(join(E2E_CLAUDE_DIR, 'skills', 'sample-skill'), { recursive: true });
+  await mkdir(join(E2E_CLAUDE_DIR, 'plugins'), { recursive: true });
+
+  // 起動実績が無い定義（未使用バッジの対象）
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'agents', 'sample-unused-agent.md'),
+    '---\nname: sample-unused-agent\ndescription: 起動実績のない合成エージェント\ntools: Read, Grep\nmodel: sonnet\n---\n本文\n',
+  );
+  // frontmatter が壊れた定義（パース不能でも一覧に残る）
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'agents', 'sample-broken-agent.md'),
+    '---\nname: sample-broken-agent\n閉じの --- が無い壊れた定義\n',
+  );
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'skills', 'sample-skill', 'SKILL.md'),
+    '---\nname: sample-skill\ndescription: 合成スキル\n---\n本文\n',
+  );
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'plugins', 'installed_plugins.json'),
+    JSON.stringify({ version: 2, plugins: { 'sample-plugin@sample-marketplace': [{ scope: 'user' }] } }),
+  );
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'settings.json'),
+    JSON.stringify({
+      permissions: { allow: ['Read', 'Glob'], deny: [], ask: [] },
+      hooks: {},
+      enabledPlugins: ['sample-plugin@sample-marketplace'],
+    }),
+  );
+  await writeFile(
+    join(E2E_CLAUDE_DIR, 'history.jsonl'),
+    toJsonl([
+      { project: E2E_PROJECT_PATH, timestamp: 1_770_000_000_000 },
+      { project: '/home/dev/history-only-project', timestamp: 1_760_000_000_000 },
+      { broken: true },
+    ]),
+  );
+}
+
+/** フィクスチャ一式を毎回ゼロから敷き直す（決定的な初期状態）。 */
+export async function seed(): Promise<void> {
+  await rm(E2E_ROOT, { recursive: true, force: true });
+  await mkdir(join(E2E_LOG_DIR, E2E_PROJECT_ID), { recursive: true });
+
+  await cp(SAMPLE_FIXTURE, sessionFilePath(SESSION_SAMPLE));
+  await writeFile(sessionFilePath(SESSION_MAIN), toJsonl(mainSessionLines()), 'utf8');
+  await writeFile(sessionFilePath(SESSION_LIVE), toJsonl(liveSessionLines()), 'utf8');
+
+  await seedClaudeDir();
+}

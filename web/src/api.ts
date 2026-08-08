@@ -10,6 +10,7 @@ import type {
   MessagesPage,
   OverviewResponse,
   ProjectListItem,
+  SearchResponse,
   SessionDetail,
   SessionListItem,
   ToolStatsResponse,
@@ -81,5 +82,6 @@ export const api = {
     getJson<AgentStatsResponse>(`/api/stats/agents${query(params)}`),
   statsHooks: (params: RangeQuery = {}) =>
     getJson<HookStatsResponse>(`/api/stats/hooks${query(params)}`),
+  search: (q: string) => getJson<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}`),
   config: () => getJson<ConfigResponse>('/api/config'),
 };

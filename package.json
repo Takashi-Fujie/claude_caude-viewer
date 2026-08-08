@@ -11,16 +11,18 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test:unit": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest",
     "serve": "tsx server/index.ts",
     "dev:web": "vite web",
     "build:web": "vite build web",
     "spec:check": "tsx scripts/spec-check.ts",
     "report": "tsx scripts/report.ts",
-    "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run report"
+    "verify": "npm run typecheck && npm run lint && npm run test:unit && npm run test:e2e && npm run report"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.62.1",
     "@tanstack/react-virtual": "^3.14.9",
     "@testing-library/react": "^16.3.2",
     "@types/express": "^5.0.6",

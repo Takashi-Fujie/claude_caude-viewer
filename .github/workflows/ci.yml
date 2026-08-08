@@ -31,5 +31,12 @@ jobs:
       - name: spec:check
         run: npm run spec:check
 
+      # E2E（Playwright・合成フィクスチャのみ。実ログ不要）
+      - name: install playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: e2e test
+        run: npm run test:e2e
+
       # npm run report は実ログ（~/.claude）に依存するため CI では実行しない。
       # ローカルの npm run verify 専用。
