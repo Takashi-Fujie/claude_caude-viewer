@@ -89,7 +89,7 @@ tool_result（user レコード）には `tool_use_id` しか無い。ツール�
 
 - サーバ: supertest + 合成フィクスチャ（既存 `tests/helpers/fixtures.ts` 方式）。フィクスチャに tool_use / tool_result（`is_error` あり・なし）・`mcp__` ツール名・hook attachment・複数日 / 複数モデル / 複数プロジェクトの行を追加する。巨大行・壊れた行・未知モデル・`<synthetic>` 行の混入は既存規約どおり維持する
 - web: Vitest + jsdom + testing-library（#6 の規約どおり）。fetch は stub。チャートのクリックは SVG 要素への fireEvent で検証する
-- レンダリングの総合確認は人間動作確認（実ログ）と #10 の Playwright に委ねる
+- レンダリングの総合確認はオーナー動作確認（実ログ）と #10 の Playwright に委ねる
 
 ## 受け入れ基準
 
